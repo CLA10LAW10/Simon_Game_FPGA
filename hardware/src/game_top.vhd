@@ -1,135 +1,202 @@
-LIBRARY IEEE;
-USE IEEE.STD_LOGIC_1164.ALL;
-USE IEEE.NUMERIC_STD.ALL;
+library IEEE;
+use IEEE.STD_LOGIC_1164.all;
+use IEEE.NUMERIC_STD.all;
 
-ENTITY number_guess IS
-    PORT (
-        clk : IN STD_LOGIC;                             -- Input clock
-        btn : IN STD_LOGIC_VECTOR (3 downto 0);         -- Input buttons for guessing and reset
-        leds : OUT STD_LOGIC_VECTOR (3 DOWNTO 0);       -- Output LEDS, used when having the number shows
-        red_led : OUT STD_LOGIC;                        -- Output RED LED, used to indicate a high number
-        blue_led : OUT STD_LOGIC;                       -- Output BLUE LED, used to indicate a low nubmer
-        green_led : OUT STD_LOGIC                       -- Output GREEN LED, used to inidcate the correct number
+entity simon_says is
+    port (
+        clk       : in std_logic;                      -- Input clock
+        btn       : in std_logic_vector (3 downto 0);  -- Input buttons for guessing and reset
+        leds      : out std_logic_vector (3 downto 0); -- Output LEDS, used when having the number shows
+        red_led   : out std_logic;                     -- Output RED LED, used to indicate a high number
+        blue_led  : out std_logic;                     -- Output BLUE LED, used to indicate a low nubmer
+        green_led : out std_logic                      -- Output GREEN LED, used to inidcate the correct number
     );
-END number_guess;
+end simon_says;
 
-ARCHITECTURE Behavioral OF number_guess IS
+architecture Behavioral of simon_says is
 
-    COMPONENT debounce IS
-        GENERIC (
-            clk_freq : INTEGER := 125_000_000;      --system clock frequency in Hz
-            stable_time : INTEGER := 10);           --time button must remain stable in ms
-        PORT (
-            clk : IN STD_LOGIC;                     --input clock
-            rst : IN STD_LOGIC;                     --asynchronous active high reset
-            button : IN STD_LOGIC;                  --input signal to be debounced
-            result : OUT STD_LOGIC);                --debounced signal
-    END COMPONENT debounce;
+    component debounce is
+        generic (
+            clk_freq    : integer := 125_000_000; --system clock frequency in Hz
+            stable_time : integer := 10);         --time button must remain stable in ms
+        port (
+            clk    : in std_logic;   --input clock
+            rst    : in std_logic;   --asynchronous active high reset
+            button : in std_logic;   --input signal to be debounced
+            result : out std_logic); --debounced signal
+    end component debounce;
 
-    COMPONENT rand_gen IS
-        PORT (
-            clk, rst : IN STD_LOGIC;                    -- Input clock and reset
-            seed : IN STD_LOGIC_VECTOR(7 DOWNTO 0);     -- Input Seed for initial value
-            output : OUT STD_LOGIC_VECTOR (3 DOWNTO 0)  -- Output Random generated value
+    component rand_gen is
+        port (
+            clk, rst : in std_logic;                     -- Input clock and reset
+            seed     : in std_logic_vector(7 downto 0);  -- Input Seed for initial value
+            output   : out std_logic_vector (3 downto 0) -- Output Random generated value
         );
-    END COMPONENT rand_gen;
+    end component rand_gen;
+
+    component single_pulse_detector is
+        port (
+            clk          : in std_logic;   -- Input clock
+            rst          : in std_logic;   -- Asynchronous active high reset
+            input_signal : in std_logic;   -- Input signal to detect
+            output_pulse : out std_logic); -- Detected single pulse
+    end component single_pulse_detector;
 
     -- Constants for debounce
-    CONSTANT clk_freq : INTEGER := 125_000_000; -- Consant system clock frequency in Hz
-    CONSTANT stable_time : INTEGER := 10;       -- Constant 10 ms stable button time.
-    CONSTANT stable_led : INTEGER := 1;         -- Constant 1 Second stable time
-
-    -- Signals used debounce
-    --SIGNAL secret_number : STD_LOGIC_VECTOR (3 DOWNTO 0);   -- Signal to pass secret number
-    SIGNAL enter_db : STD_LOGIC;                            -- Signal to hold debounced enter button value
+    constant clk_freq    : integer := 125_000_000; -- Consant system clock frequency in Hz
+    constant stable_time : integer := 10;          -- Constant 10 ms stable button time.
+    constant stable_led  : integer := 1;           -- Constant 1 Second stable time
 
     -- States used for Simon Says Game
-    type state_type is (RESET,LVL1,LVL2,LVL3,LVL4,LVL5,LVL6,LVL7,LVL8,LVL9,LVL10);
-    signal current_state : state_type := RESET;
+    type state_type is (IDLE, RESET, LVL1, LVL2, LVL3, LVL4, LVL5, LVL6, LVL7, LVL8, LVL9, LVL10, WIN, LOSE);
+    signal current_state, next_state : state_type := RESET;
+    signal rst                       : std_logic;
+
+    -- Signal used to shift bits
+    signal button_reg : std_logic_vector(39 downto 0) := (others => '0'); -- Shift register to store previous 5 inputs
+    --signal g_lvl2 : std_logic_vector (7 downto 0);
+    --g_lvl3,g_lvl4,g_lvl5,g_lvl6,g_lvl7,g_lvl8,g_lvl9,g_lvl10
 
     -- Signals used for secret numbers
-    SIGNAL sn1,sn2,sn3,sn4,sn5,sn6,sn7,sn8,sn9,sn10 : STD_LOGIC_VECTOR (3 DOWNTO 0); 
+    signal secret_number : std_logic_vector (39 downto 0);
+
+    -- Signals used for secret numbers
+    signal btn_pulse : std_logic_vector (3 downto 0);
 
     -- Signals used to flash green LED
-    SIGNAL flash : STD_LOGIC;                                           -- Signal to indicate when to flash the green LED
-    SIGNAL count : INTEGER RANGE 0 TO clk_freq * stable_led / 2 := 0;   -- Signal count from 0 to 62_500_000, 0.5 Hz
-    SIGNAL toggle : BOOLEAN := true;                                    -- Boolean toggle, used as a conditional to then toggle green LED.
+    signal flash  : std_logic                                    := '0';  -- Signal to indicate when to flash the green LED
+    signal count  : integer range 0 to clk_freq * stable_led / 2 := 0;    -- Signal count from 0 to 62_500_000, 0.5 Hz
+    signal toggle : boolean                                      := true; -- Boolean toggle, used as a conditional to then toggle green LED.
 
     -- Procedure used as a delay to flash the green LED
-    PROCEDURE delay(                        
-        CONSTANT clk_freq : INTEGER;        -- Consant system clock frequency in Hz
-        CONSTANT stable_led : INTEGER;      -- Constant 1 Second stable time
-        SIGNAL toggle : INOUT BOOLEAN;      -- Boolean toggle to indicate when to toggle
-        SIGNAL count : INOUT INTEGER) IS    -- Signal count from 0 to stable time as a delay
-    BEGIN
-
-        IF count = clk_freq * stable_led / 2 THEN   -- If 0.5 Hz, 1s Period is met
-            toggle <= NOT toggle;                   -- Toggle to initiate LED toggle
-            count <= 0;                             -- Reset counter to begin again
-        ELSE                                        -- Not yet at 0.5Hz to meet a 1s period, keep counting.
-            count <= count + 1;                     -- Count and continue delaying
-        END IF;
-    END PROCEDURE;
-
-BEGIN
-
-    -- Debounce show button input
-    show_debounce : debounce
-    GENERIC MAP(clk_freq => clk_freq, stable_time => stable_time)
-    PORT MAP(clk => clk, rst => rst, button => show, result => show_db);
-
-    -- Debounce enter button input
-    enter_debounce : debounce
-    GENERIC MAP(clk_freq => clk_freq,stable_time => stable_time)
-    PORT MAP(clk => clk, rst => rst, button => enter, result => enter_db);
-
-    -- Generate a random number with a seed of 0x4f
-    scrt_num : rand_gen
-    PORT MAP(clk => clk, rst => rst, seed => "01001111", output => secret_number);
-
- 
-
-    -- You win! Flash the green light! (Or did you hit show and enter the correct value ;)
-    flash_green : PROCESS (flash, clk)
-    BEGIN
-        IF flash = '0' THEN                                     -- If flash it 0, do not flash
-            green_led <= '0';                                   -- Keep green led off
-        ELSE                                                    -- Flash is high, flash green LED
-            IF rising_edge(clk) THEN
-                IF toggle THEN                                  -- If toggle is high
-                    green_led <= '1';                           -- turn green LED on
-                    delay(clk_freq, stable_led, toggle, count); -- Deblay for 500 ms
-                ELSE                                            -- If toggle is low
-                    green_led <= '0';                           -- Turn green LED off
-                    delay(clk_freq, stable_led, toggle, count); -- Deblay for 500 ms
-                END IF;
-            END IF;
-        END IF;
-    END PROCESS;
-
-END Behavioral;
-
-library ieee;
-use ieee.std_logic_1164.all;
-
-entity sequential_input_checker is
-    port (
-        input_sig : in std_logic_vector(3 downto 0);
-        output_sig : out std_logic
-    );
-end entity sequential_input_checker;
-
-architecture behavioral of sequential_input_checker is
-    signal input_reg : std_logic_vector(4 downto 0) := "00000"; -- Shift register to store previous 5 inputs
-begin
-    process (input_sig, input_reg)
+    procedure delay(
+        constant clk_freq   : integer;          -- Consant system clock frequency in Hz
+        constant stable_led : integer;          -- Constant 1 Second stable time
+        signal toggle       : inout boolean;    -- Boolean toggle to indicate when to toggle
+        signal count        : inout integer) is -- Signal count from 0 to stable time as a delay
     begin
-        input_reg <= input_reg(3 downto 0) & input_sig; -- Shift in the current input
 
-        if input_reg = "00010101" then
-            output_sig <= '1'; -- Input pattern matches the desired sequence, set the output high
+        if count = clk_freq * stable_led / 2 then -- If 0.5 Hz, 1s Period is met
+            toggle <= not toggle;                     -- Toggle to initiate LED toggle
+            count  <= 0;                              -- Reset counter to begin again
+        else                                      -- Not yet at 0.5Hz to meet a 1s period, keep counting.
+            count <= count + 1;                       -- Count and continue delaying
+        end if;
+    end procedure;
+
+begin
+    ------------------------------------------------
+    --------    COMPONENT INSTANTIATION     --------
+    ------------------------------------------------
+
+    random_gen : for i in 0 to 9 generate
+        secret_number_gen : rand_gen
+        port map(
+            clk    => clk,
+            rst    => rst,
+            seed   => (std_logic_vector(to_unsigned(i, 8))),
+            output => secret_number(i * 4 + 3 downto i * 4) -- 
+        );
+    end generate;
+
+    single_pulse_gen : for i in 0 to 3 generate
+        single_pulse_btn : single_pulse_detector
+        port map(
+            clk          => clk,
+            rst          => rst,
+            input_signal => btn(i),
+            output_pulse => btn_pulse(i)
+        );
+    end generate;
+
+    ------------------------------------------------
+    ---------        PROCESS BLOCKS        ---------
+    ------------------------------------------------
+
+    simon_says : process (current_state, clk)
+    begin
+
+        -- Reset and Store up to 10 levels
+        if rst = '1' then
+            button_reg <= (others => '0');
+            leds       <= (others => '0');
+            blue_led   <= '0';
+            green_led  <= '0';
         else
-            output_sig <= '0'; -- Input pattern doesn't match the desired sequence, set the output low
+            if (rising_edge(clk)) then
+                if btn_pulse /= "0000" then
+                    button_reg <= button_reg(35 downto 0) & btn_pulse;
+                end if;
+            end if;
+            current_state <= next_state;
+            ------------------------------------------------
+            --------     RESET STATE      --------
+            ------------------------------------------------
+            if current_state = RESET then
+                next_state <= LVL1;
+            end if;
+            ------------------------------------------------
+            --------     LEVEL 1 STATE      --------
+            ------------------------------------------------
+            if current_state = LVL1 then
+                if button_reg(3 downto 0) /= "0000" then
+                    if (button_reg(3 downto 0) = secret_number(39 downto 36)) then
+                        button_reg <= (others => '0');
+                        next_state <= LVL2;
+                        -- Flash Green LED twice to indicate lvl 2.
+                    else
+                        next_state <= LOSE;
+                    end if;
+                end if;
+            end if;
+            ------------------------------------------------
+            --------     LEVEL 2 STATE      --------
+            ------------------------------------------------
+            if current_state = LVL2 then
+                if button_reg(7 downto 4) /= "0000" then
+                    if (button_reg(7 downto 0) = secret_number(39 downto 32)) then
+                        next_state <= LVL3;
+                        -- Flash Green LED twice to indicate lvl 2.
+                    else
+                        next_state <= LOSE;
+                    end if;
+                end if;
+            end if;
         end if;
     end process;
-end architecture behavioral;
+
+    lose_game : process (current_state, clk)
+    begin
+
+        if current_state = LOSE then
+            red_led <= '1';
+        else
+            red_led <= '0';
+        end if;
+    end process;
+
+    -- You win! Flash the green light! (Or did you hit show and enter the correct value ;)
+    flash_green : process (flash, clk)
+    begin
+        if flash = '0' then -- If flash it 0, do not flash
+            green_led <= '0';   -- Keep green led off
+        else                -- Flash is high, flash green LED
+            if rising_edge(clk) then
+                if toggle then                              -- If toggle is high
+                    green_led <= '1';                           -- turn green LED on
+                    delay(clk_freq, stable_led, toggle, count); -- Deblay for 500 ms
+                else                                        -- If toggle is low
+                    green_led <= '0';                           -- Turn green LED off
+                    delay(clk_freq, stable_led, toggle, count); -- Deblay for 500 ms
+                end if;
+            end if;
+        end if;
+    end process;
+
+    ------------------------------------------------
+    --------     CONCURRENT ASIGNMENTS      --------
+    ------------------------------------------------
+
+    rst <= '1' when btn = "0101" else '0';
+
+end Behavioral;

@@ -1,40 +1,56 @@
-LIBRARY IEEE;
-USE IEEE.STD_LOGIC_1164.ALL;
-USE IEEE.NUMERIC_STD.ALL;
+library IEEE;
+use IEEE.STD_LOGIC_1164.all;
+use IEEE.NUMERIC_STD.all;
 
-ENTITY rand_gen IS
-    PORT (
-        clk, rst : IN STD_LOGIC;                    -- Input clock and reset
-        seed : IN STD_LOGIC_VECTOR(7 DOWNTO 0);     -- Input Seed for initial value
-        output : OUT STD_LOGIC_VECTOR (3 DOWNTO 0)  -- Output Random generated value
+entity rand_gen is
+    port (
+        clk, rst : in std_logic;                     -- Input clock and reset
+        seed     : in std_logic_vector(7 downto 0);  -- Input Seed for initial value
+        output   : out std_logic_vector (3 downto 0) -- Output Random generated value
     );
-END rand_gen;
+end rand_gen;
 
-ARCHITECTURE Behavioral OF rand_gen IS
+architecture Behavioral of rand_gen is
 
-    SIGNAL currstate : STD_LOGIC_VECTOR (7 DOWNTO 0);   -- Used to show current state of the shifting registers
-    SIGNAL nextstate : STD_LOGIC_VECTOR (7 DOWNTO 0);   -- Used to hold the next state of the shifting registers
-    SIGNAL feedback : STD_LOGIC;                        -- Signal to hold the feedback bit
+    signal currstate : std_logic_vector (7 downto 0); -- Used to show current state of the shifting registers
+    signal nextstate : std_logic_vector (7 downto 0); -- Used to hold the next state of the shifting registers
+    signal feedback  : std_logic;                     -- Signal to hold the feedback bit
+    signal random    : std_logic_vector (3 downto 0);
 
-BEGIN
+begin
 
     -- Generate a random value WHILE holding the reset button.
-    stateReg : PROCESS (clk, seed, rst)
-        VARIABLE seed_check : NATURAL RANGE 0 TO 1 := 0; -- Variable to be used if the seed should be checked
-    BEGIN
-        IF rst = '0' AND seed_check = 0 THEN        -- Seed while the reset is low
-            currstate <= seed;                      -- Seed the current state of registers
-            seed_check := 1;                        -- Shift registers have been seeded
-        ELSIF (rising_edge (clk)) THEN
-            currstate <= nextstate;                 -- Store shifted registers
-            IF rst = '1' THEN                       -- Reset button is held down. OUTPUT PSEUDO RANDOM NUMBERS!!
-                seed_check := 0;                    -- Seed bit reset
-                output <= currstate(7 DOWNTO 4);    -- Only output while the reset button is held, stop when reset is released
-            END IF;
-        END IF;
-    END PROCESS;
+    stateReg : process (clk, seed, rst)
+        variable seed_check : natural range 0 to 1 := 0; -- Variable to be used if the seed should be checked
+    begin
+        if rst = '0' and seed_check = 0 then -- Seed while the reset is low
+            currstate <= seed;                   -- Seed the current state of registers
+            seed_check := 1;                     -- Shift registers have been seeded
+        elsif (rising_edge (clk)) then
+            currstate <= nextstate;          -- Store shifted registers
+            if rst = '1' then                -- Reset button is held down. OUTPUT PSEUDO RANDOM NUMBERS!!
+                seed_check := 0;                 -- Seed bit reset
+                random <= currstate(7 downto 4); -- Only output while the reset button is held, stop when reset is released
+            end if;
+        end if;
+    end process;
 
-    feedback <= currstate(4) XOR currstate(3) XOR currstate(2) XOR currstate(0);    -- Jumble bits out to make it random and set the bit to feedback
-    nextstate <= feedback & currstate(7 DOWNTO 1);                                  -- Shift registers
+    simon_output : process (random)
+    begin
+        if (random <= "0011") then
+            output <= "0001";
+        elsif (random > "0011" and random <= "0111") then
+            output <= "0010";
+        elsif (random > "0111" and random <= "1100") then
+            output <= "0100";
+        elsif (random > "1100" and random <= "1111") then
+            output <= "1000";
+        else
+            output <= "0001";
+        end if;
+    end process;
 
-END Behavioral;
+    feedback  <= currstate(4) xor currstate(3) xor currstate(2) xor currstate(0); -- Jumble bits out to make it random and set the bit to feedback
+    nextstate <= feedback & currstate(7 downto 1);                                -- Shift registers
+
+end Behavioral;
