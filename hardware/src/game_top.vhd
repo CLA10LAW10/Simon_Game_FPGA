@@ -155,6 +155,7 @@ begin
             if current_state = LVL2 then
                 if button_reg(7 downto 4) /= "0000" then
                     if (button_reg(7 downto 0) = secret_number(39 downto 32)) then
+                    button_reg <= (others => '0');
                         next_state <= LVL3;
                         -- Flash Green LED twice to indicate lvl 2.
                     else
@@ -162,6 +163,122 @@ begin
                     end if;
                 end if;
             end if;
+            ------------------------------------------------
+            --------     LEVEL 3 STATE      --------
+            ------------------------------------------------
+            if current_state = LVL2 then
+                if button_reg(7 downto 4) /= "0000" then
+                    if (button_reg(7 downto 0) = secret_number(39 downto 32)) then
+                    button_reg <= (others => '0');
+                        next_state <= LVL3;
+                        -- Flash Green LED twice to indicate lvl 2.
+                    else
+                        next_state <= LOSE;
+                    end if;
+                end if;
+            end if;
+            ------------------------------------------------
+            --------     LEVEL 4 STATE      --------
+            ------------------------------------------------
+            if current_state = LVL4 then
+                if button_reg(7 downto 4) /= "0000" then
+                    if (button_reg(7 downto 0) = secret_number(39 downto 32)) then
+                    button_reg <= (others => '0');
+                        next_state <= LVL5;
+                        -- Flash Green LED twice to indicate lvl 2.
+                    else
+                        next_state <= LOSE;
+                    end if;
+                end if;
+            end if;
+            ------------------------------------------------
+            --------     LEVEL 5 STATE      --------
+            ------------------------------------------------
+            if current_state = LVL5 then
+                if button_reg(7 downto 4) /= "0000" then
+                    if (button_reg(7 downto 0) = secret_number(39 downto 32)) then
+                    button_reg <= (others => '0');
+                        next_state <= LVL6;
+                        -- Flash Green LED twice to indicate lvl 2.
+                    else
+                        next_state <= LOSE;
+                    end if;
+                end if;
+            end if;
+            ------------------------------------------------
+            --------     LEVEL 6 STATE      --------
+            ------------------------------------------------
+            if current_state = LVL6 then
+                if button_reg(7 downto 4) /= "0000" then
+                    if (button_reg(7 downto 0) = secret_number(39 downto 32)) then
+                    button_reg <= (others => '0');
+                        next_state <= LVL7;
+                        -- Flash Green LED twice to indicate lvl 2.
+                    else
+                        next_state <= LOSE;
+                    end if;
+                end if;
+            end if;
+            ------------------------------------------------
+            --------     LEVEL 7 STATE      --------
+            ------------------------------------------------
+            if current_state = LVL7 then
+                if button_reg(7 downto 4) /= "0000" then
+                    if (button_reg(7 downto 0) = secret_number(39 downto 32)) then
+                    button_reg <= (others => '0');
+                        next_state <= LVL8;
+                        -- Flash Green LED twice to indicate lvl 2.
+                    else
+                        next_state <= LOSE;
+                    end if;
+                end if;
+            end if;
+            ------------------------------------------------
+            --------     LEVEL 8 STATE      --------
+            ------------------------------------------------
+            if current_state = LVL8 then
+                if button_reg(7 downto 4) /= "0000" then
+                    if (button_reg(7 downto 0) = secret_number(39 downto 32)) then
+                    button_reg <= (others => '0');
+                        next_state <= LVL9;
+                        -- Flash Green LED twice to indicate lvl 2.
+                    else
+                        next_state <= LOSE;
+                    end if;
+                end if;
+            end if;
+            ------------------------------------------------
+            --------     LEVEL 9 STATE      --------
+            ------------------------------------------------
+            if current_state = LVL9 then
+                if button_reg(7 downto 4) /= "0000" then
+                    if (button_reg(7 downto 0) = secret_number(39 downto 32)) then
+                    button_reg <= (others => '0');
+                        next_state <= LVL10;
+                        -- Flash Green LED twice to indicate lvl 2.
+                    else
+                        next_state <= LOSE;
+                    end if;
+                end if;
+            end if;
+            ------------------------------------------------
+            --------     LEVEL 10 STATE      --------
+            ------------------------------------------------
+            if current_state = LVL10 then
+                if button_reg(7 downto 4) /= "0000" then
+                    if (button_reg(7 downto 0) = secret_number(39 downto 32)) then
+                    button_reg <= (others => '0');
+                        next_state <= LVL3;
+                        -- Flash Green LED twice to indicate lvl 2.
+                    else
+                        next_state <= WIN;
+                    end if;
+                end if;
+            end if;
+
+
+
+
         end if;
     end process;
 
