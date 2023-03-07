@@ -57,20 +57,162 @@ begin
 
         btn_tb <= "0101"; -- Reset
         wait for (7 * CP);
+
         btn_tb <= "0100"; -- Level 1
         wait for (2 * CP);
-
-        btn_tb <= "0000"; -- Break in Game
+        btn_tb <= "0000"; -- Delay in Game
         wait for (5 * CP);
 
         btn_tb <= "0100"; -- Level 2
         wait for (2 * CP);
         btn_tb <= "0010";
         wait for (2 * CP);
-        btn_tb <= "0000";
+        btn_tb <= "0000"; -- Delay in Game
         wait for CP;
-        btn_tb <= "0000";
+
+        
+        btn_tb <= "0100"; -- Level 1
+        wait for (2 * CP);
+        btn_tb <= "0010"; -- Level 2
         wait for CP;
+        btn_tb <= "0100"; -- Level 3
+        wait for (2 * CP);
+        btn_tb <= "0000"; -- Delay in Game
+        wait for (2 * CP);
+
+                
+        btn_tb <= "0100"; -- Level 1
+        wait for (2 * CP);
+        btn_tb <= "0010"; -- Level 2
+        wait for CP;
+        btn_tb <= "0100"; -- Level 3
+        wait for (2 * CP);
+        btn_tb <= "0010"; -- Level 4
+        wait for (2 * CP);
+        btn_tb <= "0000"; -- Delay in Game
+        wait for (2 * CP);
+
+                
+        btn_tb <= "0100"; -- Level 1
+        wait for (2 * CP);
+        btn_tb <= "0010"; -- Level 2
+        wait for CP;
+        btn_tb <= "0100"; -- Level 3
+        wait for (2 * CP);
+        btn_tb <= "0010"; -- Level 4
+        wait for (2 * CP);
+        btn_tb <= "0001"; -- Level 5
+        wait for CP;
+        btn_tb <= "0000"; -- Delay in Game
+        wait for (2 * CP);
+
+                
+        btn_tb <= "0100"; -- Level 1
+        wait for (2 * CP);
+        btn_tb <= "0010"; -- Level 2
+        wait for CP;
+        btn_tb <= "0100"; -- Level 3
+        wait for (2 * CP);
+        btn_tb <= "0010"; -- Level 4
+        wait for (2 * CP);
+        btn_tb <= "0001"; -- Level 5
+        wait for CP;
+        btn_tb <= "1000"; -- Level 6
+        wait for (2 * CP);
+        btn_tb <= "0000"; -- Delay in Game
+        wait for (2 * CP);
+
+                
+        btn_tb <= "0100"; -- Level 1
+        wait for (2 * CP);
+        btn_tb <= "0010"; -- Level 2
+        wait for CP;
+        btn_tb <= "0100"; -- Level 3
+        wait for (2 * CP);
+        btn_tb <= "0010"; -- Level 4
+        wait for (2 * CP);
+        btn_tb <= "0001"; -- Level 5
+        wait for CP;
+        btn_tb <= "1000"; -- Level 6
+        wait for (2 * CP);
+        btn_tb <= "0010"; -- Level 7
+        wait for (2 * CP);
+        btn_tb <= "0000"; -- Delay in Game
+        wait for (2 * CP);
+
+                
+        btn_tb <= "0100"; -- Level 1
+        wait for (2 * CP);
+        btn_tb <= "0010"; -- Level 2
+        wait for CP;
+        btn_tb <= "0100"; -- Level 3
+        wait for (2 * CP);
+        btn_tb <= "0010"; -- Level 4
+        wait for (2 * CP);
+        btn_tb <= "0001"; -- Level 5
+        wait for CP;
+        btn_tb <= "1000"; -- Level 6
+        wait for (2 * CP);
+        btn_tb <= "0010"; -- Level 7
+        wait for (2 * CP);
+        btn_tb <= "0100"; -- Level 8
+        wait for (2 * CP);
+        btn_tb <= "0000"; -- Delay in Game
+        wait for (2 * CP);
+
+                
+        btn_tb <= "0100"; -- Level 1
+        wait for (2 * CP);
+        btn_tb <= "0010"; -- Level 2
+        wait for CP;
+        btn_tb <= "0100"; -- Level 3
+        wait for (2 * CP);
+        btn_tb <= "0010"; -- Level 4
+        wait for (2 * CP);
+        btn_tb <= "0001"; -- Level 5
+        wait for CP;
+        btn_tb <= "1000"; -- Level 6
+        wait for (2 * CP);
+        btn_tb <= "0010"; -- Level 7
+        wait for (2 * CP);
+        btn_tb <= "0100"; -- Level 8
+        wait for (2 * CP);
+        btn_tb <= "0000"; -- Button Delay due to single pulse detector
+        wait for CP;
+        btn_tb <= "0100"; -- Level 9
+        wait for (2 * CP);
+        btn_tb <= "0000"; -- Delay in Game
+        wait for (2 * CP);
+
+        btn_tb <= "0100"; -- Level 1
+        wait for (2 * CP);
+        btn_tb <= "0010"; -- Level 2
+        wait for CP;
+        btn_tb <= "0100"; -- Level 3
+        wait for (2 * CP);
+        btn_tb <= "0010"; -- Level 4
+        wait for (2 * CP);
+        btn_tb <= "0001"; -- Level 5
+        wait for CP;
+        btn_tb <= "1000"; -- Level 6
+        wait for (2 * CP);
+        btn_tb <= "0010"; -- Level 7
+        wait for (2 * CP);
+        btn_tb <= "0100"; -- Level 8
+        wait for (2 * CP);
+        btn_tb <= "0000"; -- Button Delay due to single pulse detector
+        wait for CP;
+        btn_tb <= "0100"; -- Level 9
+        wait for (2 * CP);
+        btn_tb <= "0001"; -- Level 10
+        wait for (2 * CP);
+        btn_tb <= "0000"; -- Delay in Game
+        wait for (5 * CP);
+
+        btn_tb <= "0101"; -- Reset
+        wait for (2 * CP);
+        btn_tb <= "0100"; -- Bad Guess
+        wait for (5 * CP);
 
         stop;
 

@@ -64,9 +64,11 @@ architecture Behavioral of simon_says is
     signal btn_pulse : std_logic_vector (3 downto 0);
 
     -- Signals used to flash green LED
-    signal flash  : std_logic                                    := '0';  -- Signal to indicate when to flash the green LED
-    signal count  : integer range 0 to clk_freq * stable_led / 2 := 0;    -- Signal count from 0 to 62_500_000, 0.5 Hz
-    signal toggle : boolean                                      := true; -- Boolean toggle, used as a conditional to then toggle green LED.
+    signal flash     : std_logic                                    := '0';  -- Signal to indicate when to flash the green LED
+    signal count     : integer range 0 to clk_freq * stable_led / 2 := 0;    -- Signal count from 0 to 62_500_000, 0.5 Hz
+    signal toggle    : boolean                                      := true; -- Boolean toggle, used as a conditional to then toggle green LED.
+    signal level_won : integer                                      := 0;
+    signal score     : integer                                      := 0;
 
     -- Procedure used as a delay to flash the green LED
     procedure delay(
@@ -122,6 +124,8 @@ begin
             leds       <= (others => '0');
             blue_led   <= '0';
             green_led  <= '0';
+            level_won  <= 0;
+            next_state <= RESET;
         else
             if (rising_edge(clk)) then
                 if btn_pulse /= "0000" then
@@ -142,6 +146,7 @@ begin
                 if button_reg(3 downto 0) /= "0000" then
                     if (button_reg(3 downto 0) = secret_number(39 downto 36)) then
                         button_reg <= (others => '0');
+                        level_won  <= level_won + 1;
                         next_state <= LVL2;
                         -- Flash Green LED twice to indicate lvl 2.
                     else
@@ -155,7 +160,8 @@ begin
             if current_state = LVL2 then
                 if button_reg(7 downto 4) /= "0000" then
                     if (button_reg(7 downto 0) = secret_number(39 downto 32)) then
-                    button_reg <= (others => '0');
+                        button_reg <= (others => '0');
+                        level_won  <= level_won + 1;
                         next_state <= LVL3;
                         -- Flash Green LED twice to indicate lvl 2.
                     else
@@ -166,11 +172,12 @@ begin
             ------------------------------------------------
             --------     LEVEL 3 STATE      --------
             ------------------------------------------------
-            if current_state = LVL2 then
-                if button_reg(7 downto 4) /= "0000" then
-                    if (button_reg(7 downto 0) = secret_number(39 downto 32)) then
-                    button_reg <= (others => '0');
-                        next_state <= LVL3;
+            if current_state = LVL3 then
+                if button_reg(11 downto 8) /= "0000" then
+                    if (button_reg(11 downto 0) = secret_number(39 downto 28)) then
+                        button_reg <= (others => '0');
+                        level_won  <= level_won + 1;
+                        next_state <= LVL4;
                         -- Flash Green LED twice to indicate lvl 2.
                     else
                         next_state <= LOSE;
@@ -181,9 +188,10 @@ begin
             --------     LEVEL 4 STATE      --------
             ------------------------------------------------
             if current_state = LVL4 then
-                if button_reg(7 downto 4) /= "0000" then
-                    if (button_reg(7 downto 0) = secret_number(39 downto 32)) then
-                    button_reg <= (others => '0');
+                if button_reg(15 downto 12) /= "0000" then
+                    if (button_reg(15 downto 0) = secret_number(39 downto 24)) then
+                        button_reg <= (others => '0');
+                        level_won  <= level_won + 1;
                         next_state <= LVL5;
                         -- Flash Green LED twice to indicate lvl 2.
                     else
@@ -195,9 +203,10 @@ begin
             --------     LEVEL 5 STATE      --------
             ------------------------------------------------
             if current_state = LVL5 then
-                if button_reg(7 downto 4) /= "0000" then
-                    if (button_reg(7 downto 0) = secret_number(39 downto 32)) then
-                    button_reg <= (others => '0');
+                if button_reg(19 downto 16) /= "0000" then
+                    if (button_reg(19 downto 0) = secret_number(39 downto 20)) then
+                        button_reg <= (others => '0');
+                        level_won  <= level_won + 1;
                         next_state <= LVL6;
                         -- Flash Green LED twice to indicate lvl 2.
                     else
@@ -209,9 +218,10 @@ begin
             --------     LEVEL 6 STATE      --------
             ------------------------------------------------
             if current_state = LVL6 then
-                if button_reg(7 downto 4) /= "0000" then
-                    if (button_reg(7 downto 0) = secret_number(39 downto 32)) then
-                    button_reg <= (others => '0');
+                if button_reg(23 downto 20) /= "0000" then
+                    if (button_reg(23 downto 0) = secret_number(39 downto 16)) then
+                        button_reg <= (others => '0');
+                        level_won  <= level_won + 1;
                         next_state <= LVL7;
                         -- Flash Green LED twice to indicate lvl 2.
                     else
@@ -223,9 +233,10 @@ begin
             --------     LEVEL 7 STATE      --------
             ------------------------------------------------
             if current_state = LVL7 then
-                if button_reg(7 downto 4) /= "0000" then
-                    if (button_reg(7 downto 0) = secret_number(39 downto 32)) then
-                    button_reg <= (others => '0');
+                if button_reg(27 downto 24) /= "0000" then
+                    if (button_reg(27 downto 0) = secret_number(39 downto 12)) then
+                        button_reg <= (others => '0');
+                        level_won  <= level_won + 1;
                         next_state <= LVL8;
                         -- Flash Green LED twice to indicate lvl 2.
                     else
@@ -237,9 +248,10 @@ begin
             --------     LEVEL 8 STATE      --------
             ------------------------------------------------
             if current_state = LVL8 then
-                if button_reg(7 downto 4) /= "0000" then
-                    if (button_reg(7 downto 0) = secret_number(39 downto 32)) then
-                    button_reg <= (others => '0');
+                if button_reg(31 downto 28) /= "0000" then
+                    if (button_reg(31 downto 0) = secret_number(39 downto 8)) then
+                        button_reg <= (others => '0');
+                        level_won  <= level_won + 1;
                         next_state <= LVL9;
                         -- Flash Green LED twice to indicate lvl 2.
                     else
@@ -251,9 +263,10 @@ begin
             --------     LEVEL 9 STATE      --------
             ------------------------------------------------
             if current_state = LVL9 then
-                if button_reg(7 downto 4) /= "0000" then
-                    if (button_reg(7 downto 0) = secret_number(39 downto 32)) then
-                    button_reg <= (others => '0');
+                if button_reg(35 downto 32) /= "0000" then
+                    if (button_reg(35 downto 0) = secret_number(39 downto 4)) then
+                        button_reg <= (others => '0');
+                        level_won  <= level_won + 1;
                         next_state <= LVL10;
                         -- Flash Green LED twice to indicate lvl 2.
                     else
@@ -265,20 +278,17 @@ begin
             --------     LEVEL 10 STATE      --------
             ------------------------------------------------
             if current_state = LVL10 then
-                if button_reg(7 downto 4) /= "0000" then
-                    if (button_reg(7 downto 0) = secret_number(39 downto 32)) then
-                    button_reg <= (others => '0');
-                        next_state <= LVL3;
+                if button_reg(39 downto 36) /= "0000" then
+                    if button_reg = secret_number then
+                        button_reg <= (others => '0');
+                        level_won  <= level_won + 1;
+                        next_state <= WIN;
                         -- Flash Green LED twice to indicate lvl 2.
                     else
-                        next_state <= WIN;
+                        next_state <= LOSE;
                     end if;
                 end if;
             end if;
-
-
-
-
         end if;
     end process;
 
@@ -293,19 +303,23 @@ begin
     end process;
 
     -- You win! Flash the green light! (Or did you hit show and enter the correct value ;)
-    flash_green : process (flash, clk)
+    flash_green : process (flash, current_state, clk)
     begin
-        if flash = '0' then -- If flash it 0, do not flash
-            green_led <= '0';   -- Keep green led off
-        else                -- Flash is high, flash green LED
-            if rising_edge(clk) then
-                if toggle then                              -- If toggle is high
-                    green_led <= '1';                           -- turn green LED on
-                    delay(clk_freq, stable_led, toggle, count); -- Deblay for 500 ms
-                else                                        -- If toggle is low
-                    green_led <= '0';                           -- Turn green LED off
-                    delay(clk_freq, stable_led, toggle, count); -- Deblay for 500 ms
-                end if;
+        if current_state = LOSE then
+            if score <= level_won then
+                blue_led <= '1';
+                delay(clk_freq, stable_led, toggle, count); -- Delay for 500 ms
+                blue_led <= '0';
+                delay(clk_freq, stable_led, toggle, count); -- Delay for 500 ms
+                score <= score + 1;
+            end if;
+        elsif current_state = WIN then
+            if score <= level_won then
+                blue_led <= '1';
+                delay(clk_freq, stable_led, toggle, count); -- Delay for 500 ms
+                blue_led <= '0';
+                delay(clk_freq, stable_led, toggle, count); -- Delay for 500 ms
+                score <= score + 1;
             end if;
         end if;
     end process;
@@ -314,6 +328,7 @@ begin
     --------     CONCURRENT ASIGNMENTS      --------
     ------------------------------------------------
 
-    rst <= '1' when btn = "0101" else '0';
+    rst <= '1' when btn = "0101" else
+        '0';
 
 end Behavioral;
