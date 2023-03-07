@@ -306,6 +306,10 @@ begin
     flash_green : process (flash, current_state, clk)
     begin
         if current_state = LOSE then
+            red_led <= '1';
+            delay(clk_freq, stable_led, toggle, count); -- Delay for 500 ms
+            red_led <= '0';
+            delay(clk_freq, stable_led, toggle, count); -- Delay for 500 ms
             if score <= level_won then
                 blue_led <= '1';
                 delay(clk_freq, stable_led, toggle, count); -- Delay for 500 ms
