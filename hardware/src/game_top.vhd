@@ -15,17 +15,6 @@ end simon_says;
 
 architecture Behavioral of simon_says is
 
-    component debounce is
-        generic (
-            clk_freq    : integer := 125_000_000; --system clock frequency in Hz
-            stable_time : integer := 10);         --time button must remain stable in ms
-        port (
-            clk    : in std_logic;   --input clock
-            rst    : in std_logic;   --asynchronous active high reset
-            button : in std_logic;   --input signal to be debounced
-            result : out std_logic); --debounced signal
-    end component debounce;
-
     component rand_gen is
         port (
             clk, rst : in std_logic;                     -- Input clock and reset
@@ -53,7 +42,7 @@ architecture Behavioral of simon_says is
     signal rst                       : std_logic;
 
     -- Signal used to shift bits
-    signal button_reg : std_logic_vector(39 downto 0) := (others => '0'); -- Shift register to store previous 5 inputs
+    signal button_reg : std_logic_vector(39 downto 0) := (others => '0'); -- Shift register to store previous 10 inputs
     --signal g_lvl2 : std_logic_vector (7 downto 0);
     --g_lvl3,g_lvl4,g_lvl5,g_lvl6,g_lvl7,g_lvl8,g_lvl9,g_lvl10
 
@@ -64,11 +53,12 @@ architecture Behavioral of simon_says is
     signal btn_pulse : std_logic_vector (3 downto 0);
 
     -- Signals used to flash green LED
-    signal flash     : std_logic                                    := '0';  -- Signal to indicate when to flash the green LED
-    signal count     : integer range 0 to clk_freq * stable_led / 2 := 0;    -- Signal count from 0 to 62_500_000, 0.5 Hz
-    signal toggle    : boolean                                      := true; -- Boolean toggle, used as a conditional to then toggle green LED.
-    signal level_won : integer                                      := 0;
-    signal score     : integer                                      := 0;
+    signal flash_pattern : boolean                                      := false; -- Signal to indicate when to flash the green LED
+    signal count         : integer range 0 to clk_freq * stable_led / 2 := 0;     -- Signal count from 0 to 62_500_000, 0.5 Hz
+    signal toggle        : boolean                                      := true;  -- Boolean toggle, used as a conditional to then toggle green LED.
+    signal level_won     : integer                                      := 0;
+    signal score         : integer                                      := 0;
+    signal count_pattern : integer                                      := 0;
 
     -- Procedure used as a delay to flash the green LED
     procedure delay(
@@ -121,7 +111,7 @@ begin
         -- Reset and Store up to 10 levels
         if rst = '1' then
             button_reg <= (others => '0');
-            leds       <= (others => '0');
+            --flash_pattern <= false;
             blue_led   <= '0';
             green_led  <= '0';
             level_won  <= 0;
@@ -133,21 +123,27 @@ begin
                 end if;
             end if;
             current_state <= next_state;
+
+            --if count_pattern > (level_won) then
+            --    flash_pattern <= false;
+            --end if;
             ------------------------------------------------
             --------     RESET STATE      --------
             ------------------------------------------------
             if current_state = RESET then
                 next_state <= LVL1;
+                --flash_pattern <= true;
             end if;
             ------------------------------------------------
             --------     LEVEL 1 STATE      --------
             ------------------------------------------------
             if current_state = LVL1 then
-                if button_reg(3 downto 0) /= "0000" then
-                    if (button_reg(3 downto 0) = secret_number(39 downto 36)) then
+                if button_reg(3 downto 0) /= "0000" then                       -- No input
+                    if (button_reg(3 downto 0) = secret_number(39 downto 36)) then -- Check button input and MSBs of the secret number
                         button_reg <= (others => '0');
                         level_won  <= level_won + 1;
                         next_state <= LVL2;
+                        --flash_pattern <= true;
                         -- Flash Green LED twice to indicate lvl 2.
                     else
                         next_state <= LOSE;
@@ -163,6 +159,7 @@ begin
                         button_reg <= (others => '0');
                         level_won  <= level_won + 1;
                         next_state <= LVL3;
+                        --flash_pattern <= true;
                         -- Flash Green LED twice to indicate lvl 2.
                     else
                         next_state <= LOSE;
@@ -178,6 +175,7 @@ begin
                         button_reg <= (others => '0');
                         level_won  <= level_won + 1;
                         next_state <= LVL4;
+                        --flash_pattern <= true;
                         -- Flash Green LED twice to indicate lvl 2.
                     else
                         next_state <= LOSE;
@@ -193,6 +191,7 @@ begin
                         button_reg <= (others => '0');
                         level_won  <= level_won + 1;
                         next_state <= LVL5;
+                        --flash_pattern <= true;
                         -- Flash Green LED twice to indicate lvl 2.
                     else
                         next_state <= LOSE;
@@ -208,6 +207,7 @@ begin
                         button_reg <= (others => '0');
                         level_won  <= level_won + 1;
                         next_state <= LVL6;
+                        --flash_pattern <= true;
                         -- Flash Green LED twice to indicate lvl 2.
                     else
                         next_state <= LOSE;
@@ -223,6 +223,7 @@ begin
                         button_reg <= (others => '0');
                         level_won  <= level_won + 1;
                         next_state <= LVL7;
+                        --flash_pattern <= true;
                         -- Flash Green LED twice to indicate lvl 2.
                     else
                         next_state <= LOSE;
@@ -238,6 +239,7 @@ begin
                         button_reg <= (others => '0');
                         level_won  <= level_won + 1;
                         next_state <= LVL8;
+                        --flash_pattern <= true;
                         -- Flash Green LED twice to indicate lvl 2.
                     else
                         next_state <= LOSE;
@@ -253,6 +255,7 @@ begin
                         button_reg <= (others => '0');
                         level_won  <= level_won + 1;
                         next_state <= LVL9;
+                        --flash_pattern <= true;
                         -- Flash Green LED twice to indicate lvl 2.
                     else
                         next_state <= LOSE;
@@ -268,6 +271,7 @@ begin
                         button_reg <= (others => '0');
                         level_won  <= level_won + 1;
                         next_state <= LVL10;
+                        --flash_pattern <= true;
                         -- Flash Green LED twice to indicate lvl 2.
                     else
                         next_state <= LOSE;
@@ -283,6 +287,7 @@ begin
                         button_reg <= (others => '0');
                         level_won  <= level_won + 1;
                         next_state <= WIN;
+                        --flash_pattern <= true;
                         -- Flash Green LED twice to indicate lvl 2.
                     else
                         next_state <= LOSE;
@@ -292,38 +297,82 @@ begin
         end if;
     end process;
 
-    lose_game : process (current_state, clk)
-    begin
+    --    lose_game : process (current_state, clk)
+    --    begin
 
-        if current_state = LOSE then
+    --        if current_state = LOSE then
+    --            red_led <= '1';
+    --        else
+    --            red_led <= '0';
+    --        end if;
+    --    end process;
+
+    -- End of game. Lose / Win
+    end_game : process (current_state)
+    begin
+        if current_state = LOSE or current_state = WIN then
+            if score <= level_won then
+                score    <= score + 1;
+                if toggle = true then
+                    blue_led <= '1';
+                    delay(clk_freq, stable_led, toggle, count); -- Delay for 500 ms
+                else
+                    blue_led <= '0';
+                    delay(clk_freq, stable_led, toggle, count); -- Delay for 500 ms
+                end if;
+            end if;
+
+        elsif current_state = LOSE then
             red_led <= '1';
-        else
+            delay(clk_freq, stable_led, toggle, count); -- Delay for 500 ms
             red_led <= '0';
+            delay(clk_freq, stable_led, toggle, count); -- Delay for 500 ms
+        elsif current_state = WIN then
         end if;
     end process;
 
-    -- You win! Flash the green light! (Or did you hit show and enter the correct value ;)
-    flash_green : process (flash, current_state, clk)
+    -- End of game. Lose / Win
+    level_flash : process (clk)
     begin
-        if current_state = LOSE then
-            red_led <= '1';
-            delay(clk_freq, stable_led, toggle, count); -- Delay for 500 ms
-            red_led <= '0';
-            delay(clk_freq, stable_led, toggle, count); -- Delay for 500 ms
-            if score <= level_won then
-                blue_led <= '1';
-                delay(clk_freq, stable_led, toggle, count); -- Delay for 500 ms
-                blue_led <= '0';
-                delay(clk_freq, stable_led, toggle, count); -- Delay for 500 ms
-                score <= score + 1;
+        if rising_edge(clk) then
+            --if next_state = RESET then
+            --if current_state = RESET or next_state = RESET then
+            --leds <= (others => '0');
+            --    flash_pattern <= false;
+            --else
+
+            if flash_pattern then
+
+                if count_pattern <= (level_won + 1) then
+                    case count_pattern is
+                        when 1  => leds      <= secret_number(39 downto 36);
+                        when 2  => leds      <= secret_number(35 downto 32);
+                        when 3  => leds      <= secret_number(31 downto 28);
+                        when 4  => leds      <= secret_number(27 downto 24);
+                        when 5  => leds      <= secret_number(23 downto 20);
+                        when 6  => leds      <= secret_number(19 downto 16);
+                        when 7  => leds      <= secret_number(15 downto 12);
+                        when 8  => leds      <= secret_number(11 downto 8);
+                        when 9  => leds      <= secret_number(7 downto 4);
+                        when 10 => leds     <= secret_number(3 downto 0);
+                        when others => leds <= (others => '0');
+
+                    end case;
+                    count_pattern <= count_pattern + 1;
+                else
+                    count_pattern <= 0;
+                    flash_pattern <= false;
+                end if;
+            else
+                leds <= (others => '0');
             end if;
-        elsif current_state = WIN then
-            if score <= level_won then
-                blue_led <= '1';
-                delay(clk_freq, stable_led, toggle, count); -- Delay for 500 ms
-                blue_led <= '0';
-                delay(clk_freq, stable_led, toggle, count); -- Delay for 500 ms
-                score <= score + 1;
+            --end if;
+
+            if next_state = RESET then
+                flash_pattern <= false;
+            elsif current_state /= next_state then
+                flash_pattern <= true;
+                count_pattern <= count_pattern + 1;
             end if;
         end if;
     end process;

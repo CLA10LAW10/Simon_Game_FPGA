@@ -58,6 +58,8 @@ begin
         btn_tb <= "0101"; -- Reset
         wait for (7 * CP);
 
+        btn_tb <= "0000"; -- Delay in Game
+        wait for (5 * CP);
         btn_tb <= "0100"; -- Level 1
         wait for (2 * CP);
         btn_tb <= "0000"; -- Delay in Game
