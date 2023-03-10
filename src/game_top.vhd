@@ -3,6 +3,9 @@ use IEEE.STD_LOGIC_1164.all;
 use IEEE.NUMERIC_STD.all;
 
 entity simon_says is
+    -- generic (
+    --     clk_cycles : integer := 10
+    -- );
     port (
         clk       : in std_logic;                      -- Input clock
         btn       : in std_logic_vector (3 downto 0);  -- Input buttons for guessing and reset
@@ -46,36 +49,41 @@ architecture Behavioral of simon_says is
     signal btn_pulse : std_logic_vector (3 downto 0);
 
     -- Signals used to flash green LED
-    constant clk_freq    : integer                                      := 125_000_000; -- Consant system clock frequency in Hz
-    constant stable_led  : integer                                      := 1;         -- Constant 1 ms stable time
-    signal flash_pattern : boolean                                      := false;       -- Signal to indicate when to flash the green LED
-    signal count1        : integer range 0 to clk_freq * stable_led / 2 := 0;           -- Signal count from 0 to 62_500_000, 0.5 Hz
-    signal count2        : integer range 0 to clk_freq * stable_led / 2 := 0;           -- Signal count from 0 to 62_500_000, 0.5 Hz
-    signal count3        : integer range 0 to clk_freq * stable_led / 2 := 0;           -- Signal count from 0 to 62_500_000, 0.5 Hz
-    signal toggle1       : boolean                                      := true;        -- Boolean toggle, used as a conditional to then toggle green LED.
-    signal toggle2       : boolean                                      := true;        -- Boolean toggle, used as a conditional to then toggle green LED.
-    signal toggle3       : boolean                                      := true;        -- Boolean toggle, used as a conditional to then toggle green LED.
-    signal level_won     : integer                                      := 0;
-    signal score         : integer                                      := 0;
-    signal count_pattern : integer                                      := 0;
-    signal lose_int      : integer                                      := 0;
-    signal win_int       : integer                                      := 0;
-    signal lose_end      : boolean                                      := false;
-    signal win_end       : boolean                                      := false;
+    constant clk_cycles  : integer                       := 25;
+    constant stable_led  : integer                       := 1;     -- Constant 1 ms stable time
+    signal flash_pattern : boolean                       := false; -- Signal to indicate when to flash the green LED
+    signal count         : integer range 0 to clk_cycles := 0;     -- Signal count from 0 to 62_500_000, 0.5 Hz
+    signal count1        : integer range 0 to clk_cycles := 0;     -- Signal count from 0 to 62_500_000, 0.5 Hz
+    signal count2        : integer range 0 to clk_cycles := 0;     -- Signal count from 0 to 62_500_000, 0.5 Hz
+    signal count3        : integer range 0 to clk_cycles := 0;     -- Signal count from 0 to 62_500_000, 0.5 Hz
+    signal toggle        : boolean                       := true;  -- Boolean toggle, used as a conditional to then toggle green LED.
+    signal toggle1       : boolean                       := true;  -- Boolean toggle, used as a conditional to then toggle green LED.
+    signal toggle2       : boolean                       := true;  -- Boolean toggle, used as a conditional to then toggle green LED.
+    signal toggle3       : boolean                       := true;  -- Boolean toggle, used as a conditional to then toggle green LED.
+    signal level_won     : integer                       := 0;
+    signal score         : integer                       := 0;
+    signal count_pattern : integer                       := 0;
+    signal lose_int      : integer                       := 0;
+    signal win_int       : integer                       := 0;
+    signal lose_end      : boolean                       := false;
+    signal win_end       : boolean                       := false;
 
+    ------------------------------------------------
+    --------    Procedure Block     --------
+    ------------------------------------------------
     -- Procedure used as a delay to flash the green LED
     procedure delay(
-        constant clk_freq   : integer;          -- Consant system clock frequency in Hz
+        constant clk_cycles : integer;          -- Consant system clock frequency in Hz
         constant stable_led : integer;          -- Constant 1 Second stable time
         signal toggle       : inout boolean;    -- Boolean toggle to indicate when to toggle
         signal count        : inout integer) is -- Signal count from 0 to stable time as a delay
     begin
 
-        if count = clk_freq * stable_led *1000 / 2 then -- If 0.5 Hz, 1s Period is met
-            toggle <= not toggle;                     -- Toggle to initiate LED toggle
-            count  <= 0;                              -- Reset counter to begin again
-        else                                      -- Not yet at 0.5Hz to meet a 1s period, keep counting.
-            count <= count + 1;                       -- Count and continue delaying
+        if count = clk_cycles then -- If 0.5 Hz, 1s Period is met
+            toggle <= not toggle;      -- Toggle to initiate LED toggle
+            count  <= 0;               -- Reset counter to begin again
+        else                       -- Not yet at 0.5Hz to meet a 1s period, keep counting.
+            count <= count + 1;        -- Count and continue delaying
         end if;
     end procedure;
 
@@ -288,16 +296,17 @@ begin
     begin
         if rising_edge(clk) then
             if current_state = WIN then
-                if win_int < 5 then
+                if win_int < 10 * clk_cycles then
 
                     if toggle1 = true then
                         green_led <= '1';
-                        delay(clk_freq, stable_led, toggle1, count1); -- Delay for 500 ms
+                        win_int   <= win_int + 1;
+                        delay(clk_cycles, stable_led, toggle1, count1); -- Delay for 500 ms
                     else
                         green_led <= '0';
-                        delay(clk_freq, stable_led, toggle1, count1); -- Delay for 500 ms
+                        win_int   <= win_int + 1;
+                        delay(clk_cycles, stable_led, toggle1, count1); -- Delay for 500 ms
                     end if;
-                    win_int <= win_int + 1;
                 else
                     win_end <= true;
                 end if;
@@ -315,33 +324,27 @@ begin
     begin
         if rising_edge(clk) then
             if current_state = LOSE then
-                if (lose_int < 5) then
+                if lose_int < 10 * clk_cycles then
 
                     if toggle2 = true then
-                        red_led <= '1';
-                        delay(clk_freq, stable_led, toggle2, count2); -- Delay for 500 ms
+                        red_led  <= '1';
+                        lose_int <= lose_int + 1;
+                        delay(clk_cycles, stable_led, toggle2, count2); -- Delay for 500 ms
                     else
-                        red_led <= '0';
-                        delay(clk_freq, stable_led, toggle2, count2); -- Delay for 500 ms
+                        red_led  <= '0';
+                        lose_int <= lose_int + 1;
+                        delay(clk_cycles, stable_led, toggle2, count2); -- Delay for 500 ms
                     end if;
-                    lose_int <= lose_int + 1;
-                    --else
-                    --lose_end <= true;
+                else
+                    lose_end <= true;
                 end if;
 
             else
                 lose_int <= 0;
                 red_led  <= '0';
-                --lose_end <= false;
-            end if;
-
-            if current_state = LOSE and lose_int = 5 then
-                lose_end <= true;
-            else
                 lose_end <= false;
             end if;
         end if;
-
     end process;
 
     -- End of game. Lose / Win
@@ -349,14 +352,14 @@ begin
     begin
         if rising_edge(clk) then
             if current_state = THE_END then
-                if score <= level_won then
+                if score <= level_won * 2 * clk_cycles then
                     score    <= score + 1;
                     if toggle3 then
                         blue_led <= '1';
-                        delay(clk_freq, stable_led, toggle3, count3); -- Delay for 500 ms
+                        delay(clk_cycles, stable_led, toggle3, count3); -- Delay for 500 ms
                     else
                         blue_led <= '0';
-                        delay(clk_freq, stable_led, toggle3, count3); -- Delay for 500 ms
+                        delay(clk_cycles, stable_led, toggle3, count3); -- Delay for 500 ms
                     end if;
                 end if;
             else
@@ -373,19 +376,39 @@ begin
 
                 if count_pattern <= (level_won + 1) then
                     case count_pattern is
-                        when 1  => leds      <= secret_number(39 downto 36);
-                        when 2  => leds      <= secret_number(35 downto 32);
-                        when 3  => leds      <= secret_number(31 downto 28);
-                        when 4  => leds      <= secret_number(27 downto 24);
-                        when 5  => leds      <= secret_number(23 downto 20);
-                        when 6  => leds      <= secret_number(19 downto 16);
-                        when 7  => leds      <= secret_number(15 downto 12);
-                        when 8  => leds      <= secret_number(11 downto 8);
-                        when 9  => leds      <= secret_number(7 downto 4);
-                        when 10 => leds     <= secret_number(3 downto 0);
+                        when 1 =>
+                            leds <= secret_number(39 downto 36);
+                            delay(clk_cycles, stable_led, toggle, count);
+                        when 2 =>
+                            leds <= secret_number(35 downto 32);
+                            delay(clk_cycles, stable_led, toggle, count);
+                        when 3 =>
+                            leds <= secret_number(31 downto 28);
+                            delay(clk_cycles, stable_led, toggle, count);
+                        when 4 =>
+                            leds <= secret_number(27 downto 24);
+                            delay(clk_cycles, stable_led, toggle, count);
+                        when 5 =>
+                            leds <= secret_number(23 downto 20);
+                            delay(clk_cycles, stable_led, toggle, count);
+                        when 6 =>
+                            leds <= secret_number(19 downto 16);
+                            delay(clk_cycles, stable_led, toggle, count);
+                        when 7 =>
+                            leds <= secret_number(15 downto 12);
+                            delay(clk_cycles, stable_led, toggle, count);
+                        when 8 =>
+                            leds <= secret_number(11 downto 8);
+                            delay(clk_cycles, stable_led, toggle, count);
+                        when 9 =>
+                            leds <= secret_number(7 downto 4);
+                            delay(clk_cycles, stable_led, toggle, count);
+                        when 10 =>
+                            leds                <= secret_number(3 downto 0);
                         when others => leds <= (others => '0');
 
                     end case;
+
                     count_pattern <= count_pattern + 1;
                 else
                     count_pattern <= 0;
