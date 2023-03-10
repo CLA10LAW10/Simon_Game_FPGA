@@ -214,7 +214,7 @@ begin
         btn_tb <= "0101"; -- Reset
         wait for (2 * CP);
         btn_tb <= "0100"; -- Bad Guess
-        wait for (100*CP);
+        wait for (2000000*CP);
 
         --stop;
 

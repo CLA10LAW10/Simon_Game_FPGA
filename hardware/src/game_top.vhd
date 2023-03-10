@@ -47,7 +47,7 @@ architecture Behavioral of simon_says is
 
     -- Signals used to flash green LED
     constant clk_freq    : integer                                      := 125_000_000; -- Consant system clock frequency in Hz
-    constant stable_led  : integer                                      := 0.5;         -- Constant 1 Second stable time
+    constant stable_led  : integer                                      := 1;         -- Constant 1 ms stable time
     signal flash_pattern : boolean                                      := false;       -- Signal to indicate when to flash the green LED
     signal count1        : integer range 0 to clk_freq * stable_led / 2 := 0;           -- Signal count from 0 to 62_500_000, 0.5 Hz
     signal count2        : integer range 0 to clk_freq * stable_led / 2 := 0;           -- Signal count from 0 to 62_500_000, 0.5 Hz
@@ -71,7 +71,7 @@ architecture Behavioral of simon_says is
         signal count        : inout integer) is -- Signal count from 0 to stable time as a delay
     begin
 
-        if count = clk_freq * stable_led / 2 then -- If 0.5 Hz, 1s Period is met
+        if count = clk_freq * stable_led *1000 / 2 then -- If 0.5 Hz, 1s Period is met
             toggle <= not toggle;                     -- Toggle to initiate LED toggle
             count  <= 0;                              -- Reset counter to begin again
         else                                      -- Not yet at 0.5Hz to meet a 1s period, keep counting.
@@ -292,10 +292,10 @@ begin
 
                     if toggle1 = true then
                         green_led <= '1';
-                        --delay(clk_freq, stable_led, toggle1, count1); -- Delay for 500 ms
+                        delay(clk_freq, stable_led, toggle1, count1); -- Delay for 500 ms
                     else
                         green_led <= '0';
-                        --delay(clk_freq, stable_led, toggle1, count1); -- Delay for 500 ms
+                        delay(clk_freq, stable_led, toggle1, count1); -- Delay for 500 ms
                     end if;
                     win_int <= win_int + 1;
                 else
@@ -319,10 +319,10 @@ begin
 
                     if toggle2 = true then
                         red_led <= '1';
-                        --delay(clk_freq, stable_led, toggle2, count2); -- Delay for 500 ms
+                        delay(clk_freq, stable_led, toggle2, count2); -- Delay for 500 ms
                     else
                         red_led <= '0';
-                        --delay(clk_freq, stable_led, toggle2, count2); -- Delay for 500 ms
+                        delay(clk_freq, stable_led, toggle2, count2); -- Delay for 500 ms
                     end if;
                     lose_int <= lose_int + 1;
                     --else
@@ -353,10 +353,10 @@ begin
                     score    <= score + 1;
                     if toggle3 then
                         blue_led <= '1';
-                        --delay(clk_freq, stable_led, toggle3, count3); -- Delay for 500 ms
+                        delay(clk_freq, stable_led, toggle3, count3); -- Delay for 500 ms
                     else
                         blue_led <= '0';
-                        --delay(clk_freq, stable_led, toggle3, count3); -- Delay for 500 ms
+                        delay(clk_freq, stable_led, toggle3, count3); -- Delay for 500 ms
                     end if;
                 end if;
             else
