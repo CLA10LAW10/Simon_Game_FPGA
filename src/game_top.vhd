@@ -87,6 +87,21 @@ architecture Behavioral of simon_says is
         end if;
     end procedure;
 
+    -- Procedure used as a delay to flash the green LED
+    procedure delay_pattern(
+        constant clk_cycles : integer;          -- Consant system clock frequency in Hz
+        signal increment    : inout integer;    -- Boolean toggle to indicate when to toggle
+        signal count        : inout integer) is -- Signal count from 0 to stable time as a delay
+    begin
+
+        if count = clk_cycles then  -- If 0.5 Hz, 1s Period is met
+            increment <= increment + 1; -- Toggle to initiate LED toggle
+            count     <= 0;             -- Reset counter to begin again
+        else                        -- Not yet at 0.5Hz to meet a 1s period, keep counting.
+            count <= count + 1;         -- Count and continue delaying
+        end if;
+    end procedure;
+
 begin
     ------------------------------------------------
     --------    COMPONENT INSTANTIATION     --------
@@ -364,52 +379,52 @@ begin
                 end if;
             else
                 blue_led <= '0';
+                score    <= 0;
             end if;
         end if;
     end process;
 
     -- End of game. Lose / Win
-    level_flash : process (clk)
+    level_flash : process (clk, current_state, next_state)
     begin
         if rising_edge(clk) then
             if flash_pattern then
-
                 if count_pattern <= (level_won + 1) then
                     case count_pattern is
                         when 1 =>
                             leds <= secret_number(39 downto 36);
-                            delay(clk_cycles, stable_led, toggle, count);
+                            delay_pattern(clk_cycles, count_pattern, count);
                         when 2 =>
                             leds <= secret_number(35 downto 32);
-                            delay(clk_cycles, stable_led, toggle, count);
+                            delay_pattern(clk_cycles, count_pattern, count);
                         when 3 =>
                             leds <= secret_number(31 downto 28);
-                            delay(clk_cycles, stable_led, toggle, count);
+                            delay_pattern(clk_cycles,count_pattern,count);
                         when 4 =>
                             leds <= secret_number(27 downto 24);
-                            delay(clk_cycles, stable_led, toggle, count);
+                            delay_pattern(clk_cycles,count_pattern,count);
                         when 5 =>
                             leds <= secret_number(23 downto 20);
-                            delay(clk_cycles, stable_led, toggle, count);
+                            delay_pattern(clk_cycles,count_pattern,count);
                         when 6 =>
                             leds <= secret_number(19 downto 16);
-                            delay(clk_cycles, stable_led, toggle, count);
+                            delay_pattern(clk_cycles,count_pattern,count);
                         when 7 =>
                             leds <= secret_number(15 downto 12);
-                            delay(clk_cycles, stable_led, toggle, count);
+                            delay_pattern(clk_cycles,count_pattern,count);
                         when 8 =>
                             leds <= secret_number(11 downto 8);
-                            delay(clk_cycles, stable_led, toggle, count);
+                            delay_pattern(clk_cycles,count_pattern,count);
                         when 9 =>
                             leds <= secret_number(7 downto 4);
-                            delay(clk_cycles, stable_led, toggle, count);
+                            delay_pattern(clk_cycles,count_pattern,count);
                         when 10 =>
                             leds                <= secret_number(3 downto 0);
                         when others => leds <= (others => '0');
 
                     end case;
 
-                    count_pattern <= count_pattern + 1;
+                    --count_pattern <= count_pattern + 1;
                 else
                     count_pattern <= 0;
                     flash_pattern <= false;
