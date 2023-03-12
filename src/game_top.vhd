@@ -34,23 +34,35 @@ architecture Behavioral of simon_says is
             output_pulse : out std_logic); -- Detected single pulse
     end component single_pulse_detector;
 
+    component debounce is
+        generic (
+            clk_freq    : integer := 125_000_000; --system clock frequency in Hz
+            stable_time : integer := 10);         --time button must remain stable in ms
+        port (
+            clk    : in std_logic;   --input clock
+            rst    : in std_logic;   --asynchronous active high reset
+            button : in std_logic;   --input signal to be debounced
+            result : out std_logic); --debounced signal
+    end component debounce;
+
     -- States used for Simon Says Game
     type state_type is (IDLE, RESET, LVL1, LVL2, LVL3, LVL4, LVL5, LVL6, LVL7, LVL8, LVL9, LVL10, THE_END, WIN, LOSE);
     signal current_state, next_state : state_type := RESET;
     signal rst                       : std_logic;
-
-    -- Signal used to shift bits
-    signal button_reg : std_logic_vector(39 downto 0) := (others => '0'); -- Shift register to store previous 10 inputs
+    signal button_reg                : std_logic_vector(39 downto 0) := (others => '0'); -- Shift register to store previous 10 inputs
 
     -- Signals used for secret numbers
     signal secret_number : std_logic_vector (39 downto 0);
 
     -- Signals used for secret numbers
+    signal btn_db    : std_logic_vector (3 downto 0);
     signal btn_pulse : std_logic_vector (3 downto 0);
 
     -- Signals used to flash green LED
-    constant clk_cycles  : integer                       := 25;
-    constant stable_led  : integer                       := 1;     -- Constant 1 ms stable time
+    constant stable_time : integer                       := 1000;--10; --time button must remain stable in ms
+    constant clk_freq    : integer                       := 4;--125_000_000;
+    constant clk_cycles  : integer                       := 4;
+    constant stable_led  : integer                       := 4;     -- Constant 1 ms stable time
     signal flash_pattern : boolean                       := false; -- Signal to indicate when to flash the green LED
     signal count         : integer range 0 to clk_cycles := 0;     -- Signal count from 0 to 62_500_000, 0.5 Hz
     signal count1        : integer range 0 to clk_cycles := 0;     -- Signal count from 0 to 62_500_000, 0.5 Hz
@@ -89,16 +101,19 @@ architecture Behavioral of simon_says is
 
     -- Procedure used as a delay to flash the green LED
     procedure delay_pattern(
-        constant clk_cycles : integer;          -- Consant system clock frequency in Hz
-        signal increment    : inout integer;    -- Boolean toggle to indicate when to toggle
+        constant clk_cycles : integer;       -- Consant system clock frequency in Hz
+        signal increment    : inout integer; -- Boolean toggle to indicate when to toggle
+        signal lights       : out std_logic_vector (3 downto 0);
         signal count        : inout integer) is -- Signal count from 0 to stable time as a delay
     begin
 
         if count = clk_cycles then  -- If 0.5 Hz, 1s Period is met
             increment <= increment + 1; -- Toggle to initiate LED toggle
             count     <= 0;             -- Reset counter to begin again
-        else                        -- Not yet at 0.5Hz to meet a 1s period, keep counting.
-            count <= count + 1;         -- Count and continue delaying
+        elsif (count = clk_cycles / 2) then
+            lights <= (others => '0');
+        else                -- Not yet at 0.5Hz to meet a 1s period, keep counting.
+            count <= count + 1; -- Count and continue delaying
         end if;
     end procedure;
 
@@ -106,6 +121,12 @@ begin
     ------------------------------------------------
     --------    COMPONENT INSTANTIATION     --------
     ------------------------------------------------
+
+    debounce_gen : for i in 0 to 3 generate
+        debounce_btn : debounce
+        generic map(clk_freq => clk_freq, stable_time => stable_time)
+        port map(clk => clk, rst => rst, button => btn(i), result => btn_db(i));
+    end generate;
 
     random_gen : for i in 0 to 9 generate
         secret_number_gen : rand_gen
@@ -122,7 +143,7 @@ begin
         port map(
             clk          => clk,
             rst          => rst,
-            input_signal => btn(i),
+            input_signal => btn_db(i),
             output_pulse => btn_pulse(i)
         );
     end generate;
@@ -393,31 +414,31 @@ begin
                     case count_pattern is
                         when 1 =>
                             leds <= secret_number(39 downto 36);
-                            delay_pattern(clk_cycles, count_pattern, count);
+                            delay_pattern(clk_cycles, count_pattern, leds, count);
                         when 2 =>
                             leds <= secret_number(35 downto 32);
-                            delay_pattern(clk_cycles, count_pattern, count);
+                            delay_pattern(clk_cycles, count_pattern, leds, count);
                         when 3 =>
                             leds <= secret_number(31 downto 28);
-                            delay_pattern(clk_cycles,count_pattern,count);
+                            delay_pattern(clk_cycles, count_pattern, leds, count);
                         when 4 =>
                             leds <= secret_number(27 downto 24);
-                            delay_pattern(clk_cycles,count_pattern,count);
+                            delay_pattern(clk_cycles, count_pattern, leds, count);
                         when 5 =>
                             leds <= secret_number(23 downto 20);
-                            delay_pattern(clk_cycles,count_pattern,count);
+                            delay_pattern(clk_cycles, count_pattern, leds, count);
                         when 6 =>
                             leds <= secret_number(19 downto 16);
-                            delay_pattern(clk_cycles,count_pattern,count);
+                            delay_pattern(clk_cycles, count_pattern, leds, count);
                         when 7 =>
                             leds <= secret_number(15 downto 12);
-                            delay_pattern(clk_cycles,count_pattern,count);
+                            delay_pattern(clk_cycles, count_pattern, leds, count);
                         when 8 =>
                             leds <= secret_number(11 downto 8);
-                            delay_pattern(clk_cycles,count_pattern,count);
+                            delay_pattern(clk_cycles, count_pattern, leds, count);
                         when 9 =>
                             leds <= secret_number(7 downto 4);
-                            delay_pattern(clk_cycles,count_pattern,count);
+                            delay_pattern(clk_cycles, count_pattern, leds, count);
                         when 10 =>
                             leds                <= secret_number(3 downto 0);
                         when others => leds <= (others => '0');
@@ -448,5 +469,7 @@ begin
 
     rst <= '1' when btn = "0101" else
         '0';
+
+    --leds <= btn_db;
 
 end Behavioral;

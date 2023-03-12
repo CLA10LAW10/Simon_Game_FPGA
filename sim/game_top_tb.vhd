@@ -77,11 +77,11 @@ begin
         btn_tb <= "0010";
         wait for (clk_cycles_tb * CP);
         btn_tb <= "0000"; -- Delay in Game
-        wait for CP;
+        wait for (clk_cycles_tb * CP);
         btn_tb <= "0100"; -- Level 1
         wait for (clk_cycles_tb * CP);
         btn_tb <= "0010"; -- Level 2
-        wait for CP;
+        wait for (clk_cycles_tb * CP);
         btn_tb <= "0100"; -- Level 3
         wait for (clk_cycles_tb * CP);
         btn_tb <= "0000"; -- Delay in Game
@@ -89,35 +89,35 @@ begin
         btn_tb <= "0100"; -- Level 1
         wait for (clk_cycles_tb * CP);
         btn_tb <= "0010"; -- Level 2
-        wait for CP;
-        btn_tb <= "0100"; -- Level 3
         wait for (clk_cycles_tb * CP);
-        btn_tb <= "0010"; -- Level 4
-        wait for (clk_cycles_tb * CP);
-        btn_tb <= "0000"; -- Delay in Game
-        wait for (clk_cycles_tb * CP);
-        btn_tb <= "0100"; -- Level 1
-        wait for (clk_cycles_tb * CP);
-        btn_tb <= "0010"; -- Level 2
-        wait for CP;
         btn_tb <= "0100"; -- Level 3
         wait for (clk_cycles_tb * CP);
         btn_tb <= "0010"; -- Level 4
         wait for (clk_cycles_tb * CP);
-        btn_tb <= "0001"; -- Level 5
-        wait for CP;
         btn_tb <= "0000"; -- Delay in Game
         wait for (clk_cycles_tb * CP);
         btn_tb <= "0100"; -- Level 1
         wait for (clk_cycles_tb * CP);
         btn_tb <= "0010"; -- Level 2
-        wait for CP;
+        wait for (clk_cycles_tb * CP);
         btn_tb <= "0100"; -- Level 3
         wait for (clk_cycles_tb * CP);
         btn_tb <= "0010"; -- Level 4
         wait for (clk_cycles_tb * CP);
         btn_tb <= "0001"; -- Level 5
-        wait for CP;
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "0000"; -- Delay in Game
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "0100"; -- Level 1
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "0010"; -- Level 2
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "0100"; -- Level 3
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "0010"; -- Level 4
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "0001"; -- Level 5
+        wait for (clk_cycles_tb * CP);
         btn_tb <= "1000"; -- Level 6
         wait for (clk_cycles_tb * CP);
         btn_tb <= "0000"; -- Delay in Game
@@ -125,13 +125,13 @@ begin
         btn_tb <= "0100"; -- Level 1
         wait for (clk_cycles_tb * CP);
         btn_tb <= "0010"; -- Level 2
-        wait for CP;
+        wait for (clk_cycles_tb * CP);
         btn_tb <= "0100"; -- Level 3
         wait for (clk_cycles_tb * CP);
         btn_tb <= "0010"; -- Level 4
         wait for (clk_cycles_tb * CP);
         btn_tb <= "0001"; -- Level 5
-        wait for CP;
+        wait for (clk_cycles_tb * CP);
         btn_tb <= "1000"; -- Level 6
         wait for (clk_cycles_tb * CP);
         btn_tb <= "0010"; -- Level 7
@@ -141,13 +141,13 @@ begin
         btn_tb <= "0100"; -- Level 1
         wait for (clk_cycles_tb * CP);
         btn_tb <= "0010"; -- Level 2
-        wait for CP;
+        wait for (clk_cycles_tb * CP);
         btn_tb <= "0100"; -- Level 3
         wait for (clk_cycles_tb * CP);
         btn_tb <= "0010"; -- Level 4
         wait for (clk_cycles_tb * CP);
         btn_tb <= "0001"; -- Level 5
-        wait for CP;
+        wait for (clk_cycles_tb * CP);
         btn_tb <= "1000"; -- Level 6
         wait for (clk_cycles_tb * CP);
         btn_tb <= "0010"; -- Level 7
@@ -159,13 +159,13 @@ begin
         btn_tb <= "0100"; -- Level 1
         wait for (clk_cycles_tb * CP);
         btn_tb <= "0010"; -- Level 2
-        wait for CP;
+        wait for (clk_cycles_tb * CP);
         btn_tb <= "0100"; -- Level 3
         wait for (clk_cycles_tb * CP);
         btn_tb <= "0010"; -- Level 4
         wait for (clk_cycles_tb * CP);
         btn_tb <= "0001"; -- Level 5
-        wait for CP;
+        wait for (clk_cycles_tb * CP);
         btn_tb <= "1000"; -- Level 6
         wait for (clk_cycles_tb * CP);
         btn_tb <= "0010"; -- Level 7
@@ -173,7 +173,7 @@ begin
         btn_tb <= "0100"; -- Level 8
         wait for (clk_cycles_tb * CP);
         btn_tb <= "0000"; -- Button Delay due to single pulse detector
-        wait for CP;
+        wait for (clk_cycles_tb * CP);
         btn_tb <= "0100"; -- Level 9
         wait for (clk_cycles_tb * CP);
         btn_tb <= "0000"; -- Delay in Game
@@ -182,13 +182,13 @@ begin
         btn_tb <= "0100"; -- Level 1
         wait for (clk_cycles_tb * CP);
         btn_tb <= "0010"; -- Level 2
-        wait for CP;
+        wait for (clk_cycles_tb * CP);
         btn_tb <= "0100"; -- Level 3
         wait for (clk_cycles_tb * CP);
         btn_tb <= "0010"; -- Level 4
         wait for (clk_cycles_tb * CP);
         btn_tb <= "0001"; -- Level 5
-        wait for CP;
+        wait for (clk_cycles_tb * CP);
         btn_tb <= "1000"; -- Level 6
         wait for (clk_cycles_tb * CP);
         btn_tb <= "0010"; -- Level 7
@@ -196,7 +196,7 @@ begin
         btn_tb <= "0100"; -- Level 8
         wait for (clk_cycles_tb * CP);
         btn_tb <= "0000"; -- Button Delay due to single pulse detector
-        wait for CP;
+        wait for (clk_cycles_tb * CP);
         btn_tb <= "0100"; -- Level 9
         wait for (clk_cycles_tb * CP);
         btn_tb <= "0001"; -- Level 10
