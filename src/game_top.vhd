@@ -60,7 +60,7 @@ architecture Behavioral of simon_says is
     constant stable_time : integer                       := 10;          --time button must remain stable in ms, Changed for simulation
     constant clk_freq    : integer                       := 125_000_000; --Change for simulation
     constant clk_cycles  : integer                       := 125_000_000; --Change for simulation
-    signal flash_pattern : boolean                       := false; -- Signal to indicate when to flash the green LED
+    signal flash_pattern : boolean                       := false;       -- Signal to indicate when to flash the green LED
     signal reset_delay   : integer                       := 0;
     signal lose_delay    : integer                       := 0;
     signal win_delay     : integer                       := 0;
@@ -182,6 +182,20 @@ begin
                         reset_delay <= reset_delay + 1; -- Count and continue delaying
                     end if;
                 end if;
+
+                -----------------------------------------------------------------------------------------
+                -- For all levels, 
+                -- If the current state is LEVEL #
+                -- Check if the last input has been entered 
+                -- Compare the button inputs within the shift left register with the secret number which is represented as 1,2,3,4,5,6,7,8,9,10 within the secret number.
+                -- If you have the correct number
+                --      Wipe the button register
+                --      Increment the level won/score
+                --      Assign the next state of the next level
+                -- else
+                --      Assign the LOSE state
+                -----------------------------------------------------------------------------------------
+
                 ------------------------------------------------
                 --------     LEVEL 1 STATE      --------
                 ------------------------------------------------
@@ -323,22 +337,24 @@ begin
                     end if;
                 end if;
 
+                -- A one second delay between flashing the red lights to flashing the blue lights
                 if lose_end then
-                    if lose_delay = clk_cycles then -- If 0.5 Hz, 1s Period is met
+                    if lose_delay = clk_cycles then
                         next_state <= THE_END;
-                        lose_delay <= 0;              -- Reset counter to begin again
-                    else                          -- Not yet at delay period, keep counting.
-                        lose_delay <= lose_delay + 1; -- Count and continue delaying
+                        lose_delay <= 0;
+                    else
+                        lose_delay <= lose_delay + 1;
                     end if;
 
                 end if;
 
+                -- A one second delay between flashing the green lights to flashing the blue lights
                 if win_end then
-                    if win_delay = clk_cycles then -- If 0.5 Hz, 1s Period is met
+                    if win_delay = clk_cycles then
                         next_state <= THE_END;
-                        win_delay  <= 0;            -- Reset counter to begin again
-                    else                        -- Not yet at delay period, keep counting.
-                        win_delay <= win_delay + 1; -- Count and continue delaying
+                        win_delay  <= 0;
+                    else
+                        win_delay <= win_delay + 1;
                     end if;
 
                 end if;
@@ -346,58 +362,58 @@ begin
         end if;
     end process;
 
-    -- End of game. Lose / Win
+    -- EMade it to Level 10
     win_game : process (current_state, clk)
     begin
-        if rising_edge(clk) then
-            if current_state = WIN then
-                if win_int < 10 * clk_cycles then
+        if rising_edge(clk) then          --Synchronously
+            if current_state = WIN then       -- If in the win state
+                if win_int < 10 * clk_cycles then -- Delay counter for entire green flashing sequence
 
-                    if toggle1 = true then
-                        green_led <= '1';
-                        win_int   <= win_int + 1;
-                        delay(clk_cycles, toggle1, count1); -- Delay for 500 ms
+                    if toggle1 = true then              -- Toggle led per delay procedure
+                        green_led <= '1';                   -- Turn the green light on
+                        win_int   <= win_int + 1;           -- Increment win to continue entire delay flash cycle
+                        delay(clk_cycles, toggle1, count1); -- Delay to provide the toggle
                     else
-                        green_led <= '0';
-                        win_int   <= win_int + 1;
-                        delay(clk_cycles, toggle1, count1); -- Delay for 500 ms
+                        green_led <= '0';                   -- Turn the green light off
+                        win_int   <= win_int + 1;           -- Increment win to continue entire delay flash cycle
+                        delay(clk_cycles, toggle1, count1); -- Delay to provide the toggle
                     end if;
                 else
-                    win_end <= true;
+                    win_end <= true; -- Flash cycle is complete, go to end game
                 end if;
 
             else
-                win_int   <= 0;
-                green_led <= '0';
-                win_end   <= false;
+                win_int   <= 0;     -- else, delay is set to 0
+                green_led <= '0';   -- else, led is turned off
+                win_end   <= false; -- else, don't indicate true for the end game
             end if;
         end if;
     end process;
 
-    -- End of game. Lose / Win
+    -- Didn't make it to level 10
     lose_game : process (current_state, clk)
     begin
         if rising_edge(clk) then
             if current_state = LOSE then
                 if lose_int < 10 * clk_cycles then
 
-                    if toggle2 = true then
-                        red_led  <= '1';
-                        lose_int <= lose_int + 1;
-                        delay(clk_cycles, toggle2, count2); -- Delay for 500 ms
+                    if toggle2 = true then              -- Toggle led per delay procedure
+                        red_led  <= '1';                    -- Turn the red light on
+                        lose_int <= lose_int + 1;           -- Increment win to continue entire delay flash cycle
+                        delay(clk_cycles, toggle2, count2); -- Delay to provide the toggle
                     else
-                        red_led  <= '0';
-                        lose_int <= lose_int + 1;
-                        delay(clk_cycles, toggle2, count2); -- Delay for 500 ms
+                        red_led  <= '0';                    -- Turn the red light off
+                        lose_int <= lose_int + 1;           -- Increment lose to continue entire delay flash cycle
+                        delay(clk_cycles, toggle2, count2); -- Delay to provide the toggle
                     end if;
                 else
-                    lose_end <= true;
+                    lose_end <= true; -- Flash cycle is complete, go to end game
                 end if;
 
             else
-                lose_int <= 0;
-                red_led  <= '0';
-                lose_end <= false;
+                lose_int <= 0;     -- else, delay is set to 0
+                red_led  <= '0';   -- else, led is turned off
+                lose_end <= false; -- else, don't indicate true for the end game
             end if;
         end if;
     end process;
@@ -407,26 +423,36 @@ begin
     begin
         if rising_edge(clk) then
             if current_state = THE_END then
-                if score < level_won * 2 * clk_cycles then
-                    score <= score + 1;
-                    if toggle3 then
-                        blue_led <= '1';
-                        delay(clk_cycles, toggle3, count3); -- Delay for 500 ms
+                if score < level_won * 2 * clk_cycles then -- Delay for entire flashing cycle
+                    score <= score + 1;                        -- Increment score for entire delay
+                    if toggle3 then                            -- Toggle led per delay procedure
+                        blue_led <= '1';                           -- Turn the blue light on
+                        delay(clk_cycles, toggle3, count3);        -- Delay to provide the toggle
                     else
-                        blue_led <= '0';
-                        delay(clk_cycles, toggle3, count3); -- Delay for 500 ms
+                        blue_led <= '0';                    -- Turn the blue light off
+                        delay(clk_cycles, toggle3, count3); -- Delay to provide the toggle
                     end if;
-                elsif score >= level_won * 2 * clk_cycles then
-                    blue_led <= '0';
+                elsif score >= level_won * 2 * clk_cycles then -- Turn the blue light off at the end of the entire flash cycle
+                    blue_led <= '0';                               -- Turn the blue light off
                 end if;
             else
-                blue_led <= '0';
-                score    <= 0;
+                blue_led <= '0'; -- else, Turn the blue light off
+                score    <= 0;   -- else, score is reset to 0
             end if;
         end if;
     end process;
 
-    -- End of game. Lose / Win
+    -----------------------------------------------------------------------------------------
+    -- For all of flashing:
+    -- if it is time to flash a new pattern
+    -- Flash only the intended level
+    -- When 1-10, flash the pattern provided by the secret number which 
+    --1 is represented as secret_number(39 downto 36) while 
+    --0 is represented as secret_number(3 downto 0)
+    -- If the individual pattern has finished its flashing process, move increment and move to the next light
+    -----------------------------------------------------------------------------------------
+
+    -- Flash pattern
     level_flash : process (clk, current_state, next_state)
     begin
         if rising_edge(clk) then
@@ -447,7 +473,6 @@ begin
                                 led_reg <= (others => '0');
                             end if;
                             delay_pattern(clk_cycles, count_pattern, count);
-
                         when 3 =>
                             if count = 0 then
                                 led_reg <= secret_number(31 downto 28);
@@ -507,18 +532,21 @@ begin
                         when others => led_reg <= (others => '0');
                     end case;
                 else
+                    -- Not time to flash, reset count and flash flags
                     count_pattern <= 0;
                     flash_pattern <= false;
                 end if;
             else
+                -- Turn off LEDs when not in the state
                 led_reg <= (others => '0');
             end if;
 
+            -- Is there is a change in state, related to reset, end, win, or lose => Don't FLASH
             if next_state = RESET or next_state = LOSE or next_state = THE_END or next_state = WIN then
                 flash_pattern <= false;
-            elsif current_state /= next_state then
-                flash_pattern <= true;
-                count_pattern <= count_pattern + 1;
+            elsif current_state /= next_state then -- There is a level change in state
+                flash_pattern <= true;                 -- Flash the patten
+                count_pattern <= count_pattern + 1;    -- Increment to 1 to start flashing instead of having a 0.
             end if;
         end if;
     end process;
@@ -527,9 +555,11 @@ begin
     --------     CONCURRENT ASIGNMENTS      --------
     ------------------------------------------------
 
+    -- Asynchronous reset whenever button 0 and 2 are pushed at the same time
     rst <= '1' when btn = "0101" else
         '0';
 
+    -- Synchronsly assign the register into the output to add a pipeline
     leds <= led_reg;
 
 end Behavioral;
