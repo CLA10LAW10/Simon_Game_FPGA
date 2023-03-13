@@ -57,11 +57,13 @@ architecture Behavioral of simon_says is
     signal led_reg   : std_logic_vector (3 downto 0);
 
     -- Signals used to flash green LED
-    constant stable_time : integer                       := 1000;--10;          --time button must remain stable in ms, Changed for simulation
-    constant clk_freq    : integer                       := 4;--125_000_000; --Change for simulation
-    constant clk_cycles  : integer                       := 4;--125_000_000; --Change for simulation
+    constant stable_time : integer                       := 10;          --time button must remain stable in ms, Changed for simulation
+    constant clk_freq    : integer                       := 125_000_000; --Change for simulation
+    constant clk_cycles  : integer                       := 125_000_000; --Change for simulation
     signal flash_pattern : boolean                       := false; -- Signal to indicate when to flash the green LED
     signal reset_delay   : integer                       := 0;
+    signal lose_delay    : integer                       := 0;
+    signal win_delay     : integer                       := 0;
     signal count         : integer range 0 to clk_cycles := 0;     -- Signal count from 0 to 62_500_000, 0.5 Hz
     signal count1        : integer range 0 to clk_cycles := 0;     -- Signal count from 0 to 62_500_000, 0.5 Hz
     signal count2        : integer range 0 to clk_cycles := 0;     -- Signal count from 0 to 62_500_000, 0.5 Hz
@@ -179,7 +181,6 @@ begin
                     else                            -- Not yet at delay period, keep counting.
                         reset_delay <= reset_delay + 1; -- Count and continue delaying
                     end if;
-                    --next_state  <= LVL1;
                 end if;
                 ------------------------------------------------
                 --------     LEVEL 1 STATE      --------
@@ -323,11 +324,23 @@ begin
                 end if;
 
                 if lose_end then
-                    next_state <= THE_END;
+                    if lose_delay = clk_cycles then -- If 0.5 Hz, 1s Period is met
+                        next_state <= THE_END;
+                        lose_delay <= 0;              -- Reset counter to begin again
+                    else                          -- Not yet at delay period, keep counting.
+                        lose_delay <= lose_delay + 1; -- Count and continue delaying
+                    end if;
+
                 end if;
 
                 if win_end then
-                    next_state <= THE_END;
+                    if win_delay = clk_cycles then -- If 0.5 Hz, 1s Period is met
+                        next_state <= THE_END;
+                        win_delay  <= 0;            -- Reset counter to begin again
+                    else                        -- Not yet at delay period, keep counting.
+                        win_delay <= win_delay + 1; -- Count and continue delaying
+                    end if;
+
                 end if;
             end if;
         end if;
