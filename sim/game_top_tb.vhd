@@ -24,12 +24,12 @@ architecture Behavioral of simon_says_tb is
     end component simon_says;
 
     constant clk_cycles_tb : integer := 10;
-    signal clk_tb       : std_logic; -- Signal simulated clock 
-    signal btn_tb       : std_logic_vector (3 downto 0);
-    signal leds_tb      : std_logic_vector (3 downto 0); -- Signal simulated output LED
-    signal red_led_tb   : std_logic;                     -- Signal simulated red output LED
-    signal blue_led_tb  : std_logic;                     -- Signal simulated blue output LED
-    signal green_led_tb : std_logic;                     -- Signal simulated green output LED
+    signal clk_tb          : std_logic; -- Signal simulated clock 
+    signal btn_tb          : std_logic_vector (3 downto 0);
+    signal leds_tb         : std_logic_vector (3 downto 0); -- Signal simulated output LED
+    signal red_led_tb      : std_logic;                     -- Signal simulated red output LED
+    signal blue_led_tb     : std_logic;                     -- Signal simulated blue output LED
+    signal green_led_tb    : std_logic;                     -- Signal simulated green output LED
 
     constant CP : time := 8ns;
 
@@ -61,6 +61,10 @@ begin
     -- Input vector
     input_gen : process
     begin
+    
+        -------------------------------------
+        --------------GAME 1-----------------
+        -------------------------------------
 
         btn_tb <= "0101"; -- Reset
         wait for (7 * CP);
@@ -204,8 +208,173 @@ begin
         btn_tb <= "0000"; -- Delay in Game
         wait for (clk_cycles_tb * 20 * CP);
 
-        btn_tb <= "0101"; -- Reset
+        -------------------------------------
+        --------------GAME 2-----------------
+        -------------------------------------
+
+        btn_tb <= "0101"; -- Reset 
         wait for (clk_cycles_tb * CP);
+
+        btn_tb <= "0001"; -- Level 1
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "0000"; -- Delay in Game
+        wait for (clk_cycles_tb * CP);
+
+
+        btn_tb <= "0001"; -- Level 1
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "0010"; -- Level 2
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "0000"; -- Delay in Game
+        wait for (clk_cycles_tb * CP);
+
+
+        btn_tb <= "0001"; -- Level 1
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "0010"; -- Level 2
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "0001"; -- Level 3
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "0000"; -- Delay in Game
+        wait for (clk_cycles_tb * CP);
+
+
+        btn_tb <= "0001"; -- Level 1
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "0010"; -- Level 2
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "0001"; -- Level 3
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "0010"; -- Level 4
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "0000"; -- Delay in Game
+        wait for (clk_cycles_tb * CP);
+
+
+        btn_tb <= "0001"; -- Level 1
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "0010"; -- Level 2
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "0001"; -- Level 3
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "0010"; -- Level 4
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "1000"; -- Level 5
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "0000"; -- Delay in Game
+        wait for (clk_cycles_tb * CP);
+
+
+        btn_tb <= "0001"; -- Level 1
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "0010"; -- Level 2
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "0001"; -- Level 3
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "0010"; -- Level 4
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "1000"; -- Level 5
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "0100"; -- Level 6
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "0000"; -- Delay in Game
+        wait for (clk_cycles_tb * CP);
+
+        btn_tb <= "0001"; -- Level 1
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "0010"; -- Level 2
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "0001"; -- Level 3
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "0010"; -- Level 4
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "1000"; -- Level 5
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "0100"; -- Level 6
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "0000"; -- Button Delay due to single pulse detector
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "0100"; -- Level 7
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "0000"; -- Delay in Game
+        wait for (clk_cycles_tb * CP);
+
+
+        btn_tb <= "0001"; -- Level 1
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "0010"; -- Level 2
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "0001"; -- Level 3
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "0010"; -- Level 4
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "1000"; -- Level 5
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "0100"; -- Level 6
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "0000"; -- Button Delay due to single pulse detector
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "0100"; -- Level 7
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "1000"; -- Level 8
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "0000"; -- Delay in Game
+        wait for (clk_cycles_tb * CP);
+
+        btn_tb <= "0001"; -- Level 1
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "0010"; -- Level 2
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "0001"; -- Level 3
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "0010"; -- Level 4
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "1000"; -- Level 5
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "0100"; -- Level 6
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "0000"; -- Button Delay due to single pulse detector
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "0100"; -- Level 7
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "1000"; -- Level 8
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "0010"; -- Level 9
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "0000"; -- Delay in Game
+        wait for (clk_cycles_tb * CP);
+
+        btn_tb <= "0001"; -- Level 1
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "0010"; -- Level 2
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "0001"; -- Level 3
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "0010"; -- Level 4
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "1000"; -- Level 5
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "0100"; -- Level 6
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "0000"; -- Button Delay due to single pulse detector
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "0100"; -- Level 7
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "1000"; -- Level 8
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "0010"; -- Level 9
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "0001"; -- Level 10
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "0000"; -- Delay in Game
+        wait for (clk_cycles_tb * 20 * CP);
+
+        -------------------------------------
+        --------------GAME 3-----------------
+        -------------------------------------
+        btn_tb <= "0101"; -- Reset 
+        wait for (clk_cycles_tb * CP);
+
         btn_tb <= "0001"; -- Level 1
         wait for (clk_cycles_tb * CP);
         btn_tb <= "0000"; -- Delay in Game

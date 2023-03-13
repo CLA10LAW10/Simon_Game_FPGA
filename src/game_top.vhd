@@ -57,9 +57,9 @@ architecture Behavioral of simon_says is
     signal led_reg   : std_logic_vector (3 downto 0);
 
     -- Signals used to flash green LED
-    constant stable_time : integer                       := 10;          --time button must remain stable in ms, Changed for simulation
-    constant clk_freq    : integer                       := 125_000_000; --Change for simulation
-    constant clk_cycles  : integer                       := 125_000_000; --Change for simulation
+    constant stable_time : integer                       := 1000;--10;          --time button must remain stable in ms, Changed for simulation
+    constant clk_freq    : integer                       := 4;--125_000_000; --Change for simulation
+    constant clk_cycles  : integer                       := 4;--125_000_000; --Change for simulation
     signal flash_pattern : boolean                       := false; -- Signal to indicate when to flash the green LED
     signal reset_delay   : integer                       := 0;
     signal count         : integer range 0 to clk_cycles := 0;     -- Signal count from 0 to 62_500_000, 0.5 Hz
