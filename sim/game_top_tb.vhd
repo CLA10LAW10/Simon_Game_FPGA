@@ -202,16 +202,19 @@ begin
         btn_tb <= "0001"; -- Level 10
         wait for (clk_cycles_tb * CP);
         btn_tb <= "0000"; -- Delay in Game
-        wait;
-        -- wait for (5 * CP);
+        wait for (clk_cycles_tb * 5 * CP);
 
-        -- btn_tb <= "0101"; -- Reset
-        -- wait for (clk_cycles_tb * CP);
-        -- btn_tb <= "0100"; -- Bad Guess
-        -- wait for (clk_cycles_tb * CP);
-        -- wait;
-
-        --stop;
+        btn_tb <= "0101"; -- Reset
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "0010"; -- Level 1
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "0000"; -- Delay in Game
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "0010"; -- Level 1
+        wait for (clk_cycles_tb * CP);
+        btn_tb <= "0001"; -- Level 2 - Wrong
+        wait for (clk_cycles_tb * 3 * CP);
+        stop;
 
     end process;
 

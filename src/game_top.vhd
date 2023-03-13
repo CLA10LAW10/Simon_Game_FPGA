@@ -60,10 +60,10 @@ architecture Behavioral of simon_says is
     signal led_reg   : std_logic_vector (3 downto 0);
 
     -- Signals used to flash green LED
-    constant stable_time : integer                       := 1000;--10; --time button must remain stable in ms
-    constant clk_freq    : integer                       := 4;--125_000_000;
-    constant clk_cycles  : integer                       := 10;
-    constant stable_led  : integer                       := 4;     -- Constant 1 ms stable time
+    constant stable_time : integer                       := 10; --time button must remain stable in ms
+    constant clk_freq    : integer                       := 125_000_000;
+    constant clk_cycles  : integer                       := 125_000_000;
+    constant stable_led  : integer                       := 1;     -- Constant 1 ms stable time
     signal flash_pattern : boolean                       := false; -- Signal to indicate when to flash the green LED
     signal count         : integer range 0 to clk_cycles := 0;     -- Signal count from 0 to 62_500_000, 0.5 Hz
     signal count1        : integer range 0 to clk_cycles := 0;     -- Signal count from 0 to 62_500_000, 0.5 Hz
@@ -386,7 +386,7 @@ begin
     begin
         if rising_edge(clk) then
             if current_state = THE_END then
-                if score <= level_won * 2 * clk_cycles then
+                if score < level_won * 2 * clk_cycles then
                     score    <= score + 1;
                     if toggle3 then
                         blue_led <= '1';
@@ -395,7 +395,7 @@ begin
                         blue_led <= '0';
                         delay(clk_cycles, stable_led, toggle3, count3); -- Delay for 500 ms
                     end if;
-                elsif score > level_won * 2 * clk_cycles then
+                elsif score >= level_won * 2 * clk_cycles then
                     blue_led <= '0';
                 end if;
             else
