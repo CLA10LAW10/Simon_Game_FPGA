@@ -23,7 +23,7 @@ architecture Behavioral of simon_says_tb is
         );
     end component simon_says;
 
-    constant clk_cycles_tb : integer := 100;
+    constant clk_cycles_tb : integer := 10;
     signal clk_tb       : std_logic; -- Signal simulated clock 
     signal btn_tb       : std_logic_vector (3 downto 0);
     signal leds_tb      : std_logic_vector (3 downto 0); -- Signal simulated output LED
@@ -202,18 +202,18 @@ begin
         btn_tb <= "0001"; -- Level 10
         wait for (clk_cycles_tb * CP);
         btn_tb <= "0000"; -- Delay in Game
-        wait for (clk_cycles_tb * 5 * CP);
+        wait for (clk_cycles_tb * 20 * CP);
 
         btn_tb <= "0101"; -- Reset
         wait for (clk_cycles_tb * CP);
-        btn_tb <= "0010"; -- Level 1
+        btn_tb <= "0001"; -- Level 1
         wait for (clk_cycles_tb * CP);
         btn_tb <= "0000"; -- Delay in Game
         wait for (clk_cycles_tb * CP);
-        btn_tb <= "0010"; -- Level 1
+        btn_tb <= "0001"; -- Level 1
         wait for (clk_cycles_tb * CP);
-        btn_tb <= "0001"; -- Level 2 - Wrong
-        wait for (clk_cycles_tb * 3 * CP);
+        btn_tb <= "1000"; -- Level 2 - Wrong
+        wait for (clk_cycles_tb * 10 * CP);
         stop;
 
     end process;
