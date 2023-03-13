@@ -54,14 +54,15 @@ architecture Behavioral of simon_says is
     -- Signals used for secret numbers
     signal secret_number : std_logic_vector (39 downto 0);
 
-    -- Signals used for secret numbers
+    -- Signals used for debounce and button pulse
     signal btn_db    : std_logic_vector (3 downto 0);
     signal btn_pulse : std_logic_vector (3 downto 0);
+    signal led_reg   : std_logic_vector (3 downto 0);
 
     -- Signals used to flash green LED
     constant stable_time : integer                       := 1000;--10; --time button must remain stable in ms
     constant clk_freq    : integer                       := 4;--125_000_000;
-    constant clk_cycles  : integer                       := 4;
+    constant clk_cycles  : integer                       := 10;
     constant stable_led  : integer                       := 4;     -- Constant 1 ms stable time
     signal flash_pattern : boolean                       := false; -- Signal to indicate when to flash the green LED
     signal count         : integer range 0 to clk_cycles := 0;     -- Signal count from 0 to 62_500_000, 0.5 Hz
@@ -101,19 +102,16 @@ architecture Behavioral of simon_says is
 
     -- Procedure used as a delay to flash the green LED
     procedure delay_pattern(
-        constant clk_cycles : integer;       -- Consant system clock frequency in Hz
-        signal increment    : inout integer; -- Boolean toggle to indicate when to toggle
-        signal lights       : out std_logic_vector (3 downto 0);
+        constant clk_cycles : integer;          -- Consant system clock frequency in Hz
+        signal increment    : inout integer;    -- Boolean toggle to indicate when to toggle
         signal count        : inout integer) is -- Signal count from 0 to stable time as a delay
     begin
 
         if count = clk_cycles then  -- If 0.5 Hz, 1s Period is met
             increment <= increment + 1; -- Toggle to initiate LED toggle
             count     <= 0;             -- Reset counter to begin again
-        elsif (count = clk_cycles / 2) then
-            lights <= (others => '0');
-        else                -- Not yet at 0.5Hz to meet a 1s period, keep counting.
-            count <= count + 1; -- Count and continue delaying
+        else                        -- Not yet at 0.5Hz to meet a 1s period, keep counting.
+            count <= count + 1;         -- Count and continue delaying
         end if;
     end procedure;
 
@@ -397,6 +395,8 @@ begin
                         blue_led <= '0';
                         delay(clk_cycles, stable_led, toggle3, count3); -- Delay for 500 ms
                     end if;
+                elsif score > level_won * 2 * clk_cycles then
+                    blue_led <= '0';
                 end if;
             else
                 blue_led <= '0';
@@ -413,45 +413,84 @@ begin
                 if count_pattern <= (level_won + 1) then
                     case count_pattern is
                         when 1 =>
-                            leds <= secret_number(39 downto 36);
-                            delay_pattern(clk_cycles, count_pattern, leds, count);
+                            if count = 0 then
+                                led_reg <= secret_number(39 downto 36);
+                            elsif count = clk_cycles / 2 then
+                                led_reg <= (others => '0');
+                            end if;
+                            delay_pattern(clk_cycles, count_pattern, count);
                         when 2 =>
-                            leds <= secret_number(35 downto 32);
-                            delay_pattern(clk_cycles, count_pattern, leds, count);
+                            if count = 0 then
+                                led_reg <= secret_number(35 downto 32);
+                            elsif count = clk_cycles / 2 then
+                                led_reg <= (others => '0');
+                            end if;
+                            delay_pattern(clk_cycles, count_pattern, count);
+
                         when 3 =>
-                            leds <= secret_number(31 downto 28);
-                            delay_pattern(clk_cycles, count_pattern, leds, count);
+                            if count = 0 then
+                                led_reg <= secret_number(31 downto 28);
+                            elsif count = clk_cycles / 2 then
+                                led_reg <= (others => '0');
+                            end if;
+                            delay_pattern(clk_cycles, count_pattern, count);
                         when 4 =>
-                            leds <= secret_number(27 downto 24);
-                            delay_pattern(clk_cycles, count_pattern, leds, count);
+                            if count = 0 then
+                                led_reg <= secret_number(27 downto 24);
+                            elsif count = clk_cycles / 2 then
+                                led_reg <= (others => '0');
+                            end if;
+                            delay_pattern(clk_cycles, count_pattern, count);
                         when 5 =>
-                            leds <= secret_number(23 downto 20);
-                            delay_pattern(clk_cycles, count_pattern, leds, count);
+                            if count = 0 then
+                                led_reg <= secret_number(23 downto 20);
+                            elsif count = clk_cycles / 2 then
+                                led_reg <= (others => '0');
+                            end if;
+                            delay_pattern(clk_cycles, count_pattern, count);
                         when 6 =>
-                            leds <= secret_number(19 downto 16);
-                            delay_pattern(clk_cycles, count_pattern, leds, count);
+                            if count = 0 then
+                                led_reg <= secret_number(19 downto 16);
+                            elsif count = clk_cycles / 2 then
+                                led_reg <= (others => '0');
+                            end if;
+                            delay_pattern(clk_cycles, count_pattern, count);
                         when 7 =>
-                            leds <= secret_number(15 downto 12);
-                            delay_pattern(clk_cycles, count_pattern, leds, count);
+                            if count = 0 then
+                                led_reg <= secret_number(15 downto 12);
+                            elsif count = clk_cycles / 2 then
+                                led_reg <= (others => '0');
+                            end if;
+                            delay_pattern(clk_cycles, count_pattern, count);
                         when 8 =>
-                            leds <= secret_number(11 downto 8);
-                            delay_pattern(clk_cycles, count_pattern, leds, count);
+                            if count = 0 then
+                                led_reg <= secret_number(11 downto 8);
+                            elsif count = clk_cycles / 2 then
+                                led_reg <= (others => '0');
+                            end if;
+                            delay_pattern(clk_cycles, count_pattern, count);
                         when 9 =>
-                            leds <= secret_number(7 downto 4);
-                            delay_pattern(clk_cycles, count_pattern, leds, count);
+                            if count = 0 then
+                                led_reg <= secret_number(7 downto 4);
+                            elsif count = clk_cycles / 2 then
+                                led_reg <= (others => '0');
+                            end if;
+                            delay_pattern(clk_cycles, count_pattern, count);
                         when 10 =>
-                            leds                <= secret_number(3 downto 0);
-                        when others => leds <= (others => '0');
-
+                            if count = 0 then
+                                led_reg <= secret_number(3 downto 0);
+                            elsif count = clk_cycles / 2 then
+                                led_reg <= (others => '0');
+                            end if;
+                            delay_pattern(clk_cycles, count_pattern, count);
+                        when others => led_reg <= (others => '0');
                     end case;
-
-                    --count_pattern <= count_pattern + 1;
                 else
                     count_pattern <= 0;
                     flash_pattern <= false;
                 end if;
             else
-                leds <= (others => '0');
+                led_reg <= (others => '0');
             end if;
 
             if next_state = RESET or next_state = LOSE or next_state = THE_END or next_state = WIN then
@@ -470,6 +509,6 @@ begin
     rst <= '1' when btn = "0101" else
         '0';
 
-    --leds <= btn_db;
+    leds <= led_reg;
 
 end Behavioral;
