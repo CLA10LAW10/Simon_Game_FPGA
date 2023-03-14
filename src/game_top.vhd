@@ -6,10 +6,10 @@ entity simon_says is
     port (
         clk       : in std_logic;                      -- Input clock
         btn       : in std_logic_vector (3 downto 0);  -- Input buttons for guessing and reset
-        leds      : out std_logic_vector (3 downto 0); -- Output LEDS, used when having the number shows
-        red_led   : out std_logic;                     -- Output RED LED, used to indicate a high number
-        blue_led  : out std_logic;                     -- Output BLUE LED, used to indicate a low nubmer
-        green_led : out std_logic                      -- Output GREEN LED, used to inidcate the correct number
+        leds      : out std_logic_vector (3 downto 0); -- Output LEDS, will display game pattern
+        red_led   : out std_logic;                     -- Output RED LED, used to indicate an end of game due to a wrong guess
+        blue_led  : out std_logic;                     -- Output BLUE LED, used to indicate resulting scre of the game
+        green_led : out std_logic                      -- Output GREEN LED, used to inidcate making all the way to level 10
     );
 end simon_says;
 
@@ -31,51 +31,85 @@ architecture Behavioral of simon_says is
             output_pulse : out std_logic); -- Detected single pulse
     end component single_pulse_detector;
 
+    component debounce is
+        generic (
+            clk_freq    : integer := 125_000_000; --system clock frequency in Hz
+            stable_time : integer := 10);         --time button must remain stable in ms
+        port (
+            clk    : in std_logic;   --input clock
+            rst    : in std_logic;   --asynchronous active high reset
+            button : in std_logic;   --input signal to be debounced
+            result : out std_logic); --debounced signal
+    end component debounce;
+
     -- States used for Simon Says Game
     type state_type is (IDLE, RESET, LVL1, LVL2, LVL3, LVL4, LVL5, LVL6, LVL7, LVL8, LVL9, LVL10, THE_END, WIN, LOSE);
     signal current_state, next_state : state_type := RESET;
     signal rst                       : std_logic;
-
-    -- Signal used to shift bits
-    signal button_reg : std_logic_vector(39 downto 0) := (others => '0'); -- Shift register to store previous 10 inputs
+    signal button_reg                : std_logic_vector(39 downto 0) := (others => '0'); -- Shift register to store previous 10 inputs
 
     -- Signals used for secret numbers
     signal secret_number : std_logic_vector (39 downto 0);
 
-    -- Signals used for secret numbers
+    -- Signals used for debounce and button pulse
+    signal btn_db    : std_logic_vector (3 downto 0);
     signal btn_pulse : std_logic_vector (3 downto 0);
+    signal led_reg   : std_logic_vector (3 downto 0);
 
     -- Signals used to flash green LED
-    constant clk_freq    : integer                                      := 125_000_000; -- Consant system clock frequency in Hz
-    constant stable_led  : integer                                      := 0.5;         -- Constant 1 Second stable time
-    signal flash_pattern : boolean                                      := false;       -- Signal to indicate when to flash the green LED
-    signal count1        : integer range 0 to clk_freq * stable_led / 2 := 0;           -- Signal count from 0 to 62_500_000, 0.5 Hz
-    signal count2        : integer range 0 to clk_freq * stable_led / 2 := 0;           -- Signal count from 0 to 62_500_000, 0.5 Hz
-    signal count3        : integer range 0 to clk_freq * stable_led / 2 := 0;           -- Signal count from 0 to 62_500_000, 0.5 Hz
-    signal toggle1       : boolean                                      := true;        -- Boolean toggle, used as a conditional to then toggle green LED.
-    signal toggle2       : boolean                                      := true;        -- Boolean toggle, used as a conditional to then toggle green LED.
-    signal toggle3       : boolean                                      := true;        -- Boolean toggle, used as a conditional to then toggle green LED.
-    signal level_won     : integer                                      := 0;
-    signal score         : integer                                      := 0;
-    signal count_pattern : integer                                      := 0;
-    signal lose_int      : integer                                      := 0;
-    signal win_int       : integer                                      := 0;
-    signal lose_end      : boolean                                      := false;
-    signal win_end       : boolean                                      := false;
+    constant stable_time : integer                       := 10;          --time button must remain stable in ms, Changed for simulation
+    constant clk_freq    : integer                       := 125_000_000; --Change for simulation
+    constant clk_cycles  : integer                       := 125_000_000; --Change for simulation
+    signal flash_pattern : boolean                       := false;       -- Signal to indicate when to flash the green LED
+    signal reset_delay   : integer                       := 0;
+    signal lose_delay    : integer                       := 0;
+    signal win_delay     : integer                       := 0;
+    signal count         : integer range 0 to clk_cycles := 0;     -- Signal count from 0 to 62_500_000, 0.5 Hz
+    signal count1        : integer range 0 to clk_cycles := 0;     -- Signal count from 0 to 62_500_000, 0.5 Hz
+    signal count2        : integer range 0 to clk_cycles := 0;     -- Signal count from 0 to 62_500_000, 0.5 Hz
+    signal count3        : integer range 0 to clk_cycles := 0;     -- Signal count from 0 to 62_500_000, 0.5 Hz
+    signal toggle        : boolean                       := true;  -- Boolean toggle, used as a conditional to then toggle green LED.
+    signal toggle1       : boolean                       := true;  -- Boolean toggle, used as a conditional to then toggle green LED.
+    signal toggle2       : boolean                       := true;  -- Boolean toggle, used as a conditional to then toggle green LED.
+    signal toggle3       : boolean                       := true;  -- Boolean toggle, used as a conditional to then toggle green LED.
+    signal level_won     : integer                       := 0;     -- Count the levels won/passed
+    signal score         : integer                       := 0;     -- Used as a delay with the levels won
+    signal count_pattern : integer                       := 0;     -- Used to increment the flashing pattern within a delay
+    signal lose_int      : integer                       := 0;     -- Used as a delay for flashing the red led
+    signal win_int       : integer                       := 0;     -- Used as a delay for flashing the green led
+    signal lose_end      : boolean                       := false; -- Used as a flag to move to THE END from LOSE
+    signal win_end       : boolean                       := false; -- Used as a flag to move to THE END from WIN
 
+    ------------------------------------------------
+    --------    Procedure Block     --------
+    ------------------------------------------------
     -- Procedure used as a delay to flash the green LED
     procedure delay(
-        constant clk_freq   : integer;          -- Consant system clock frequency in Hz
-        constant stable_led : integer;          -- Constant 1 Second stable time
+        constant clk_cycles : integer;          -- Consant system clock frequency in Hz
         signal toggle       : inout boolean;    -- Boolean toggle to indicate when to toggle
         signal count        : inout integer) is -- Signal count from 0 to stable time as a delay
     begin
 
-        if count = clk_freq * stable_led / 2 then -- If 0.5 Hz, 1s Period is met
-            toggle <= not toggle;                     -- Toggle to initiate LED toggle
-            count  <= 0;                              -- Reset counter to begin again
-        else                                      -- Not yet at 0.5Hz to meet a 1s period, keep counting.
-            count <= count + 1;                       -- Count and continue delaying
+        if count = clk_cycles - 1 then -- If 0.5 Hz, 1s Period is met
+            toggle <= not toggle;          -- Toggle to initiate LED toggle
+            count  <= 0;                   -- Reset counter to begin again
+        else                           -- Not yet at 0.5Hz to meet a 1s period, keep counting.
+            count <= count + 1;            -- Count and continue delaying
+        end if;
+    end procedure;
+
+    -- Procedure used as a delay to flash the green LED
+    procedure delay_pattern(
+        constant clk_cycles : integer;          -- Consant system clock frequency in Hz
+        signal increment    : inout integer;    -- Boolean toggle to indicate when to toggle
+        signal count        : inout integer) is -- Signal count from 0 to stable time as a delay
+    begin
+
+        if count = clk_cycles then  -- If 0.5 Hz, 1s Period is met
+            increment <= increment + 1; -- Toggle to initiate LED toggle
+            count     <= 0;             -- Reset counter to begin again
+        else                        -- Not yet at 0.5Hz to meet a 1s period, keep counting.
+            count <= count + 1;         -- Count and continue delaying
         end if;
     end procedure;
 
@@ -84,6 +118,14 @@ begin
     --------    COMPONENT INSTANTIATION     --------
     ------------------------------------------------
 
+    -- Generate statement for all 4 buttons
+    debounce_gen : for i in 0 to 3 generate
+        debounce_btn : debounce
+        generic map(clk_freq => clk_freq, stable_time => stable_time)
+        port map(clk => clk, rst => rst, button => btn(i), result => btn_db(i));
+    end generate;
+
+    -- Randome Number Generatoor, generate statement for all 10 random numbers 
     random_gen : for i in 0 to 9 generate
         secret_number_gen : rand_gen
         port map(
@@ -94,12 +136,13 @@ begin
         );
     end generate;
 
+    --Generate statement for all 4 debounced buttons
     single_pulse_gen : for i in 0 to 3 generate
         single_pulse_btn : single_pulse_detector
         port map(
             clk          => clk,
             rst          => rst,
-            input_signal => btn(i),
+            input_signal => btn_db(i),
             output_pulse => btn_pulse(i)
         );
     end generate;
@@ -108,240 +151,271 @@ begin
     ---------        PROCESS BLOCKS        ---------
     ------------------------------------------------
 
-    simon_says : process (current_state, clk)
+    -- Simon Game, main game process
+    simon_says : process (current_state, clk, rst)
     begin
 
-        -- Reset and Store up to 10 levels
+        -- Asynchronous reset 
         if rst = '1' then
-            button_reg <= (others => '0');
-            level_won  <= 0;
-            next_state <= RESET;
+            button_reg  <= (others => '0');
+            level_won   <= 0;
+            next_state  <= RESET;
+            reset_delay <= 0;
         else
+            -- When a button is pushed, store the value in a shift register as the LSBs
             if (rising_edge(clk)) then
                 if btn_pulse /= "0000" then
                     button_reg <= button_reg(35 downto 0) & btn_pulse;
                 end if;
-            end if;
-            current_state <= next_state;
+                -- Every clock pulse, assign next state to the current state
+                current_state <= next_state;
 
-            ------------------------------------------------
-            --------     RESET STATE      --------
-            ------------------------------------------------
-            if current_state = RESET then
-                next_state <= LVL1;
-                --flash_pattern <= true;
-            end if;
-            ------------------------------------------------
-            --------     LEVEL 1 STATE      --------
-            ------------------------------------------------
-            if current_state = LVL1 then
-                if button_reg(3 downto 0) /= "0000" then                       -- No input
-                    if (button_reg(3 downto 0) = secret_number(39 downto 36)) then -- Check button input and MSBs of the secret number
-                        button_reg <= (others => '0');
-                        level_won  <= level_won + 1;
-                        next_state <= LVL2;
-                    else
-                        next_state <= LOSE;
+                ------------------------------------------------
+                --------     RESET STATE      --------
+                ------------------------------------------------
+                -- If in the reset state, move to the LVL1
+                if current_state = RESET then
+                    if reset_delay = clk_cycles then -- If 0.5 Hz, 1s Period is met
+                        next_state  <= LVL1;
+                        reset_delay <= 0;               -- Reset counter to begin again
+                    else                            -- Not yet at delay period, keep counting.
+                        reset_delay <= reset_delay + 1; -- Count and continue delaying
                     end if;
                 end if;
-            end if;
-            ------------------------------------------------
-            --------     LEVEL 2 STATE      --------
-            ------------------------------------------------
-            if current_state = LVL2 then
-                if button_reg(7 downto 4) /= "0000" then
-                    if (button_reg(7 downto 0) = secret_number(39 downto 32)) then
-                        button_reg <= (others => '0');
-                        level_won  <= level_won + 1;
-                        next_state <= LVL3;
-                    else
-                        next_state <= LOSE;
-                    end if;
-                end if;
-            end if;
-            ------------------------------------------------
-            --------     LEVEL 3 STATE      --------
-            ------------------------------------------------
-            if current_state = LVL3 then
-                if button_reg(11 downto 8) /= "0000" then
-                    if (button_reg(11 downto 0) = secret_number(39 downto 28)) then
-                        button_reg <= (others => '0');
-                        level_won  <= level_won + 1;
-                        next_state <= LVL4;
-                    else
-                        next_state <= LOSE;
-                    end if;
-                end if;
-            end if;
-            ------------------------------------------------
-            --------     LEVEL 4 STATE      --------
-            ------------------------------------------------
-            if current_state = LVL4 then
-                if button_reg(15 downto 12) /= "0000" then
-                    if (button_reg(15 downto 0) = secret_number(39 downto 24)) then
-                        button_reg <= (others => '0');
-                        level_won  <= level_won + 1;
-                        next_state <= LVL5;
-                    else
-                        next_state <= LOSE;
-                    end if;
-                end if;
-            end if;
-            ------------------------------------------------
-            --------     LEVEL 5 STATE      --------
-            ------------------------------------------------
-            if current_state = LVL5 then
-                if button_reg(19 downto 16) /= "0000" then
-                    if (button_reg(19 downto 0) = secret_number(39 downto 20)) then
-                        button_reg <= (others => '0');
-                        level_won  <= level_won + 1;
-                        next_state <= LVL6;
-                    else
-                        next_state <= LOSE;
-                    end if;
-                end if;
-            end if;
-            ------------------------------------------------
-            --------     LEVEL 6 STATE      --------
-            ------------------------------------------------
-            if current_state = LVL6 then
-                if button_reg(23 downto 20) /= "0000" then
-                    if (button_reg(23 downto 0) = secret_number(39 downto 16)) then
-                        button_reg <= (others => '0');
-                        level_won  <= level_won + 1;
-                        next_state <= LVL7;
-                    else
-                        next_state <= LOSE;
-                    end if;
-                end if;
-            end if;
-            ------------------------------------------------
-            --------     LEVEL 7 STATE      --------
-            ------------------------------------------------
-            if current_state = LVL7 then
-                if button_reg(27 downto 24) /= "0000" then
-                    if (button_reg(27 downto 0) = secret_number(39 downto 12)) then
-                        button_reg <= (others => '0');
-                        level_won  <= level_won + 1;
-                        next_state <= LVL8;
-                    else
-                        next_state <= LOSE;
-                    end if;
-                end if;
-            end if;
-            ------------------------------------------------
-            --------     LEVEL 8 STATE      --------
-            ------------------------------------------------
-            if current_state = LVL8 then
-                if button_reg(31 downto 28) /= "0000" then
-                    if (button_reg(31 downto 0) = secret_number(39 downto 8)) then
-                        button_reg <= (others => '0');
-                        level_won  <= level_won + 1;
-                        next_state <= LVL9;
-                    else
-                        next_state <= LOSE;
-                    end if;
-                end if;
-            end if;
-            ------------------------------------------------
-            --------     LEVEL 9 STATE      --------
-            ------------------------------------------------
-            if current_state = LVL9 then
-                if button_reg(35 downto 32) /= "0000" then
-                    if (button_reg(35 downto 0) = secret_number(39 downto 4)) then
-                        button_reg <= (others => '0');
-                        level_won  <= level_won + 1;
-                        next_state <= LVL10;
-                    else
-                        next_state <= LOSE;
-                    end if;
-                end if;
-            end if;
-            ------------------------------------------------
-            --------     LEVEL 10 STATE      --------
-            ------------------------------------------------
-            if current_state = LVL10 then
-                if button_reg(39 downto 36) /= "0000" then
-                    if button_reg = secret_number then
-                        button_reg <= (others => '0');
-                        level_won  <= level_won + 1;
-                        next_state <= WIN;
-                    else
-                        next_state <= LOSE;
-                    end if;
-                end if;
-            end if;
 
-            if lose_end then
-                next_state <= THE_END;
-            end if;
+                -----------------------------------------------------------------------------------------
+                -- For all levels, 
+                -- If the current state is LEVEL #
+                -- Check if the last input has been entered 
+                -- Compare the button inputs within the shift left register with the secret number which is represented as 1,2,3,4,5,6,7,8,9,10 within the secret number.
+                -- If you have the correct number
+                --      Wipe the button register
+                --      Increment the level won/score
+                --      Assign the next state of the next level
+                -- else
+                --      Assign the LOSE state
+                -----------------------------------------------------------------------------------------
 
-            if win_end then
-                next_state <= THE_END;
-            end if;
+                ------------------------------------------------
+                --------     LEVEL 1 STATE      --------
+                ------------------------------------------------
+                if current_state = LVL1 then                                   -- If the current state is level 1
+                    if button_reg(3 downto 0) /= "0000" then                       -- And a guess of 1 input has been recieved
+                        if (button_reg(3 downto 0) = secret_number(39 downto 36)) then -- Compare the 1 input to the MSBs of secret number which will be guess 1
+                            button_reg <= (others => '0');                                 -- Correct input, wipe the button register
+                            level_won  <= level_won + 1;                                   -- Increment the Level
+                            next_state <= LVL2;                                            -- Next level is now level 2
+                        else
+                            next_state <= LOSE; -- Wrong input, go to lose stage
+                        end if;
+                    end if;
+                end if;
+                ------------------------------------------------
+                --------     LEVEL 2 STATE      --------
+                ------------------------------------------------
+                if current_state = LVL2 then
+                    if button_reg(7 downto 4) /= "0000" then
+                        if (button_reg(7 downto 0) = secret_number(39 downto 32)) then
+                            button_reg <= (others => '0');
+                            level_won  <= level_won + 1;
+                            next_state <= LVL3;
+                        else
+                            next_state <= LOSE;
+                        end if;
+                    end if;
+                end if;
+                ------------------------------------------------
+                --------     LEVEL 3 STATE      --------
+                ------------------------------------------------
+                if current_state = LVL3 then
+                    if button_reg(11 downto 8) /= "0000" then
+                        if (button_reg(11 downto 0) = secret_number(39 downto 28)) then
+                            button_reg <= (others => '0');
+                            level_won  <= level_won + 1;
+                            next_state <= LVL4;
+                        else
+                            next_state <= LOSE;
+                        end if;
+                    end if;
+                end if;
+                ------------------------------------------------
+                --------     LEVEL 4 STATE      --------
+                ------------------------------------------------
+                if current_state = LVL4 then
+                    if button_reg(15 downto 12) /= "0000" then
+                        if (button_reg(15 downto 0) = secret_number(39 downto 24)) then
+                            button_reg <= (others => '0');
+                            level_won  <= level_won + 1;
+                            next_state <= LVL5;
+                        else
+                            next_state <= LOSE;
+                        end if;
+                    end if;
+                end if;
+                ------------------------------------------------
+                --------     LEVEL 5 STATE      --------
+                ------------------------------------------------
+                if current_state = LVL5 then
+                    if button_reg(19 downto 16) /= "0000" then
+                        if (button_reg(19 downto 0) = secret_number(39 downto 20)) then
+                            button_reg <= (others => '0');
+                            level_won  <= level_won + 1;
+                            next_state <= LVL6;
+                        else
+                            next_state <= LOSE;
+                        end if;
+                    end if;
+                end if;
+                ------------------------------------------------
+                --------     LEVEL 6 STATE      --------
+                ------------------------------------------------
+                if current_state = LVL6 then
+                    if button_reg(23 downto 20) /= "0000" then
+                        if (button_reg(23 downto 0) = secret_number(39 downto 16)) then
+                            button_reg <= (others => '0');
+                            level_won  <= level_won + 1;
+                            next_state <= LVL7;
+                        else
+                            next_state <= LOSE;
+                        end if;
+                    end if;
+                end if;
+                ------------------------------------------------
+                --------     LEVEL 7 STATE      --------
+                ------------------------------------------------
+                if current_state = LVL7 then
+                    if button_reg(27 downto 24) /= "0000" then
+                        if (button_reg(27 downto 0) = secret_number(39 downto 12)) then
+                            button_reg <= (others => '0');
+                            level_won  <= level_won + 1;
+                            next_state <= LVL8;
+                        else
+                            next_state <= LOSE;
+                        end if;
+                    end if;
+                end if;
+                ------------------------------------------------
+                --------     LEVEL 8 STATE      --------
+                ------------------------------------------------
+                if current_state = LVL8 then
+                    if button_reg(31 downto 28) /= "0000" then
+                        if (button_reg(31 downto 0) = secret_number(39 downto 8)) then
+                            button_reg <= (others => '0');
+                            level_won  <= level_won + 1;
+                            next_state <= LVL9;
+                        else
+                            next_state <= LOSE;
+                        end if;
+                    end if;
+                end if;
+                ------------------------------------------------
+                --------     LEVEL 9 STATE      --------
+                ------------------------------------------------
+                if current_state = LVL9 then
+                    if button_reg(35 downto 32) /= "0000" then
+                        if (button_reg(35 downto 0) = secret_number(39 downto 4)) then
+                            button_reg <= (others => '0');
+                            level_won  <= level_won + 1;
+                            next_state <= LVL10;
+                        else
+                            next_state <= LOSE;
+                        end if;
+                    end if;
+                end if;
+                ------------------------------------------------
+                --------     LEVEL 10 STATE      --------
+                ------------------------------------------------
+                if current_state = LVL10 then
+                    if button_reg(39 downto 36) /= "0000" then
+                        if button_reg = secret_number then
+                            button_reg <= (others => '0');
+                            level_won  <= level_won + 1;
+                            next_state <= WIN;
+                        else
+                            next_state <= LOSE;
+                        end if;
+                    end if;
+                end if;
 
+                -- A one second delay between flashing the red lights to flashing the blue lights
+                if lose_end then
+                    if lose_delay = clk_cycles then
+                        next_state <= THE_END;
+                        lose_delay <= 0;
+                    else
+                        lose_delay <= lose_delay + 1;
+                    end if;
+
+                end if;
+
+                -- A one second delay between flashing the green lights to flashing the blue lights
+                if win_end then
+                    if win_delay = clk_cycles then
+                        next_state <= THE_END;
+                        win_delay  <= 0;
+                    else
+                        win_delay <= win_delay + 1;
+                    end if;
+
+                end if;
+            end if;
         end if;
     end process;
 
-    -- End of game. Lose / Win
+    -- EMade it to Level 10
     win_game : process (current_state, clk)
     begin
-        if rising_edge(clk) then
-            if current_state = WIN then
-                if win_int < 5 then
+        if rising_edge(clk) then          --Synchronously
+            if current_state = WIN then       -- If in the win state
+                if win_int < 10 * clk_cycles then -- Delay counter for entire green flashing sequence
 
-                    if toggle1 = true then
-                        green_led <= '1';
-                        --delay(clk_freq, stable_led, toggle1, count1); -- Delay for 500 ms
+                    if toggle1 = true then              -- Toggle led per delay procedure
+                        green_led <= '1';                   -- Turn the green light on
+                        win_int   <= win_int + 1;           -- Increment win to continue entire delay flash cycle
+                        delay(clk_cycles, toggle1, count1); -- Delay to provide the toggle
                     else
-                        green_led <= '0';
-                        --delay(clk_freq, stable_led, toggle1, count1); -- Delay for 500 ms
+                        green_led <= '0';                   -- Turn the green light off
+                        win_int   <= win_int + 1;           -- Increment win to continue entire delay flash cycle
+                        delay(clk_cycles, toggle1, count1); -- Delay to provide the toggle
                     end if;
-                    win_int <= win_int + 1;
                 else
-                    win_end <= true;
+                    win_end <= true; -- Flash cycle is complete, go to end game
                 end if;
 
             else
-                win_int   <= 0;
-                green_led <= '0';
-                win_end   <= false;
+                win_int   <= 0;     -- else, delay is set to 0
+                green_led <= '0';   -- else, led is turned off
+                win_end   <= false; -- else, don't indicate true for the end game
             end if;
         end if;
     end process;
 
-    -- End of game. Lose / Win
+    -- Didn't make it to level 10
     lose_game : process (current_state, clk)
     begin
         if rising_edge(clk) then
             if current_state = LOSE then
-                if (lose_int < 5) then
+                if lose_int < 10 * clk_cycles then
 
-                    if toggle2 = true then
-                        red_led <= '1';
-                        --delay(clk_freq, stable_led, toggle2, count2); -- Delay for 500 ms
+                    if toggle2 = true then              -- Toggle led per delay procedure
+                        red_led  <= '1';                    -- Turn the red light on
+                        lose_int <= lose_int + 1;           -- Increment win to continue entire delay flash cycle
+                        delay(clk_cycles, toggle2, count2); -- Delay to provide the toggle
                     else
-                        red_led <= '0';
-                        --delay(clk_freq, stable_led, toggle2, count2); -- Delay for 500 ms
+                        red_led  <= '0';                    -- Turn the red light off
+                        lose_int <= lose_int + 1;           -- Increment lose to continue entire delay flash cycle
+                        delay(clk_cycles, toggle2, count2); -- Delay to provide the toggle
                     end if;
-                    lose_int <= lose_int + 1;
-                    --else
-                    --lose_end <= true;
+                else
+                    lose_end <= true; -- Flash cycle is complete, go to end game
                 end if;
 
             else
-                lose_int <= 0;
-                red_led  <= '0';
-                --lose_end <= false;
-            end if;
-
-            if current_state = LOSE and lose_int = 5 then
-                lose_end <= true;
-            else
-                lose_end <= false;
+                lose_int <= 0;     -- else, delay is set to 0
+                red_led  <= '0';   -- else, led is turned off
+                lose_end <= false; -- else, don't indicate true for the end game
             end if;
         end if;
-
     end process;
 
     -- End of game. Lose / Win
@@ -349,57 +423,130 @@ begin
     begin
         if rising_edge(clk) then
             if current_state = THE_END then
-                if score <= level_won then
-                    score    <= score + 1;
-                    if toggle3 then
-                        blue_led <= '1';
-                        --delay(clk_freq, stable_led, toggle3, count3); -- Delay for 500 ms
+                if score < level_won * 2 * clk_cycles then -- Delay for entire flashing cycle
+                    score <= score + 1;                        -- Increment score for entire delay
+                    if toggle3 then                            -- Toggle led per delay procedure
+                        blue_led <= '1';                           -- Turn the blue light on
+                        delay(clk_cycles, toggle3, count3);        -- Delay to provide the toggle
                     else
-                        blue_led <= '0';
-                        --delay(clk_freq, stable_led, toggle3, count3); -- Delay for 500 ms
+                        blue_led <= '0';                    -- Turn the blue light off
+                        delay(clk_cycles, toggle3, count3); -- Delay to provide the toggle
                     end if;
+                elsif score >= level_won * 2 * clk_cycles then -- Turn the blue light off at the end of the entire flash cycle
+                    blue_led <= '0';                               -- Turn the blue light off
                 end if;
             else
-                blue_led <= '0';
+                blue_led <= '0'; -- else, Turn the blue light off
+                score    <= 0;   -- else, score is reset to 0
             end if;
         end if;
     end process;
 
-    -- End of game. Lose / Win
-    level_flash : process (clk)
+    -----------------------------------------------------------------------------------------
+    -- For all of flashing:
+    -- if it is time to flash a new pattern
+    -- Flash only the intended level
+    -- When 1-10, flash the pattern provided by the secret number which 
+    --1 is represented as secret_number(39 downto 36) while 
+    --0 is represented as secret_number(3 downto 0)
+    -- If the individual pattern has finished its flashing process, move increment and move to the next light
+    -----------------------------------------------------------------------------------------
+
+    -- Flash pattern
+    level_flash : process (clk, current_state, next_state)
     begin
         if rising_edge(clk) then
             if flash_pattern then
-
                 if count_pattern <= (level_won + 1) then
                     case count_pattern is
-                        when 1  => leds      <= secret_number(39 downto 36);
-                        when 2  => leds      <= secret_number(35 downto 32);
-                        when 3  => leds      <= secret_number(31 downto 28);
-                        when 4  => leds      <= secret_number(27 downto 24);
-                        when 5  => leds      <= secret_number(23 downto 20);
-                        when 6  => leds      <= secret_number(19 downto 16);
-                        when 7  => leds      <= secret_number(15 downto 12);
-                        when 8  => leds      <= secret_number(11 downto 8);
-                        when 9  => leds      <= secret_number(7 downto 4);
-                        when 10 => leds     <= secret_number(3 downto 0);
-                        when others => leds <= (others => '0');
-
+                        when 1 =>
+                            if count = 0 then
+                                led_reg <= secret_number(39 downto 36);
+                            elsif count = clk_cycles / 2 then
+                                led_reg <= (others => '0');
+                            end if;
+                            delay_pattern(clk_cycles, count_pattern, count);
+                        when 2 =>
+                            if count = 0 then
+                                led_reg <= secret_number(35 downto 32);
+                            elsif count = clk_cycles / 2 then
+                                led_reg <= (others => '0');
+                            end if;
+                            delay_pattern(clk_cycles, count_pattern, count);
+                        when 3 =>
+                            if count = 0 then
+                                led_reg <= secret_number(31 downto 28);
+                            elsif count = clk_cycles / 2 then
+                                led_reg <= (others => '0');
+                            end if;
+                            delay_pattern(clk_cycles, count_pattern, count);
+                        when 4 =>
+                            if count = 0 then
+                                led_reg <= secret_number(27 downto 24);
+                            elsif count = clk_cycles / 2 then
+                                led_reg <= (others => '0');
+                            end if;
+                            delay_pattern(clk_cycles, count_pattern, count);
+                        when 5 =>
+                            if count = 0 then
+                                led_reg <= secret_number(23 downto 20);
+                            elsif count = clk_cycles / 2 then
+                                led_reg <= (others => '0');
+                            end if;
+                            delay_pattern(clk_cycles, count_pattern, count);
+                        when 6 =>
+                            if count = 0 then
+                                led_reg <= secret_number(19 downto 16);
+                            elsif count = clk_cycles / 2 then
+                                led_reg <= (others => '0');
+                            end if;
+                            delay_pattern(clk_cycles, count_pattern, count);
+                        when 7 =>
+                            if count = 0 then
+                                led_reg <= secret_number(15 downto 12);
+                            elsif count = clk_cycles / 2 then
+                                led_reg <= (others => '0');
+                            end if;
+                            delay_pattern(clk_cycles, count_pattern, count);
+                        when 8 =>
+                            if count = 0 then
+                                led_reg <= secret_number(11 downto 8);
+                            elsif count = clk_cycles / 2 then
+                                led_reg <= (others => '0');
+                            end if;
+                            delay_pattern(clk_cycles, count_pattern, count);
+                        when 9 =>
+                            if count = 0 then
+                                led_reg <= secret_number(7 downto 4);
+                            elsif count = clk_cycles / 2 then
+                                led_reg <= (others => '0');
+                            end if;
+                            delay_pattern(clk_cycles, count_pattern, count);
+                        when 10 =>
+                            if count = 0 then
+                                led_reg <= secret_number(3 downto 0);
+                            elsif count = clk_cycles / 2 then
+                                led_reg <= (others => '0');
+                            end if;
+                            delay_pattern(clk_cycles, count_pattern, count);
+                        when others => led_reg <= (others => '0');
                     end case;
-                    count_pattern <= count_pattern + 1;
                 else
+                    -- Not time to flash, reset count and flash flags
                     count_pattern <= 0;
                     flash_pattern <= false;
                 end if;
             else
-                leds <= (others => '0');
+                -- Turn off LEDs when not in the state
+                led_reg <= (others => '0');
             end if;
 
+            -- Is there is a change in state, related to reset, end, win, or lose => Don't FLASH
             if next_state = RESET or next_state = LOSE or next_state = THE_END or next_state = WIN then
                 flash_pattern <= false;
-            elsif current_state /= next_state then
-                flash_pattern <= true;
-                count_pattern <= count_pattern + 1;
+            elsif current_state /= next_state then -- There is a level change in state
+                flash_pattern <= true;                 -- Flash the patten
+                count_pattern <= count_pattern + 1;    -- Increment to 1 to start flashing instead of having a 0.
             end if;
         end if;
     end process;
@@ -408,7 +555,11 @@ begin
     --------     CONCURRENT ASIGNMENTS      --------
     ------------------------------------------------
 
+    -- Asynchronous reset whenever button 0 and 2 are pushed at the same time
     rst <= '1' when btn = "0101" else
         '0';
+
+    -- Synchronsly assign the register into the output to add a pipeline
+    leds <= led_reg;
 
 end Behavioral;
