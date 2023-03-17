@@ -362,7 +362,7 @@ begin
         end if;
     end process;
 
-    -- EMade it to Level 10
+    -- Made it to Level 10
     win_game : process (current_state, clk)
     begin
         if rising_edge(clk) then          --Synchronously
